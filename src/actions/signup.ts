@@ -6,6 +6,7 @@ import { validateWithZod } from "@/lib/helpers/zod/functions";
 import { sendVerificationMail } from "@/lib/utils/mail/verify-email";
 import { capitalizeInitialLetters, hashPassword, signJwt } from "@/lib/helpers";
 import { db } from "@/lib/db";
+import schemas from '@/lib/db/schemas';
 
 export async function getStarted(_: GetStartedResult, formData: FormData) {
     try {
@@ -45,6 +46,7 @@ export async function signup(_: UserSignupShape, formData: FormData) {
         const json = {
             name: formData.get('full-name'),
             userType: formData.get('user-type'),
+            gender: formData.get('gender'),
             password: formData.get('password'),
             confirmPassword: formData.get('confirm-password')
         };
@@ -66,14 +68,31 @@ export async function signup(_: UserSignupShape, formData: FormData) {
                 errors: result.errors
             }
     
-        const name = capitalizeInitialLetters(String(formData.get('full-name')));
+        const name = capitalizeInitialLetters(result.data?.name!);
         const password = await hashPassword(result.data?.password!);
-        const userData = {
-            email: formData.get('email'),
+        const newUserData = {
+            email: String(formData.get('email')),
             name,
-            userType: formData.get('user-type'),
+            userType: result.data?.userType!,
+            gender: result.data?.gender!,
             password
         }
+        
+        const existingUser = await db.query.user.findFirst({
+            where: (user, { eq }) => eq(user.email, newUserData.email)
+        });
+
+        if(existingUser)
+            return {
+                success: false,
+                errors: {
+                    message: 'an account already exists for this user.'
+                }
+            }
+
+        const newUser = await db.insert(schemas.user)
+            .values(newUserData)
+            .returning();
     
         return {
             success: true,

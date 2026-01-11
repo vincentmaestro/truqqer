@@ -6,12 +6,14 @@ import { EmailVerificationPayload } from "@/types/signup";
 type FormField = 
     | { type: 'name', value: string }
     | { type: 'user-type', value: string }
+    | { type: 'gender', value: string }
     | { type: 'password', value: string }
     | { type: 'confirm-password', value: string }
 
 const defaultState = {
     name: '',
     userType: '',
+    gender: '',
     password: '',
     confirmPassword: ''
 }
@@ -21,6 +23,7 @@ export const initialState = {
     data: {
         name: '',
         userType: '',
+        gender: '',
         password: '',
         confirmPassword: ''
     }
@@ -30,6 +33,7 @@ function reducer(state: typeof defaultState, action: FormField) {
     switch(action.type) {
         case 'name': return { ...state, name: action.value };
         case 'user-type': return { ...state, userType: action.value };
+        case 'gender': return { ...state, gender: action.value };
         case 'password': return { ...state, password: action.value };
         case 'confirm-password': return { ...state, confirmPassword: action.value };
 
@@ -105,6 +109,23 @@ export default function ContinueRegistration({ result }: {
                         </select>
                         { state.errors?.userType && 
                             <p className='text-lg text-red-200'>{state?.errors.userType}</p> 
+                        }
+                    </div>
+                    <div className="mb-3">
+                        <label>Gender:</label>
+                        <select
+                        name="gender"
+                        value={userData.gender}
+                        onChange={e => dispatch({ type: 'gender', value: e.target.value })}
+                        className='rounded-sm py-0.5 px-5 border border-gray-400 block outline-none'
+                        >
+                            <option>Select</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                        { state.errors?.gender && 
+                            <p className='text-lg text-red-200'>{state?.errors.gender}</p> 
                         }
                     </div>
                     <div className="mb-3">
