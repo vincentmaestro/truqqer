@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { sql } from 'drizzle-orm';
-import { driverCurrentLocation, userCurrentLocation } from '../db/schemas/locations';
+import { driverLocations } from '../db/schemas/user-and-driver';
 
 /**
  * Performs a query to find available drivers within a given range/radius relative to the caller's location.
@@ -11,36 +11,36 @@ import { driverCurrentLocation, userCurrentLocation } from '../db/schemas/locati
  */
 
 export async function nearbyDrivers(myLocation: { lat: number; lng: number }, withinRadius: number) {
-    const driverLocations = await db.select({
-        driverId: driverCurrentLocation.driverId,
-        latitude: sql<number>`ST_Y(${driverCurrentLocation.location})`,
-        longitude: sql<number>`ST_X(${driverCurrentLocation.location})`,
+    const nearbyDriverLocations = await db.select({
+        driverId: driverLocations.driverId,
+        latitude: sql<number>`ST_Y(${driverLocations.location})`,
+        longitude: sql<number>`ST_X(${driverLocations.location})`,
         proximity: sql<number>`ST_Distance(
-            ${driverCurrentLocation.location}::geography,
+            ${driverLocations.location}::geography,
             ST_SetSRID(ST_MakePoint(${myLocation.lng}, ${myLocation.lat}), 4326)::geography
         )`
     })
-    .from(driverCurrentLocation)
+    .from(driverLocations)
     .where(sql`
-        ${driverCurrentLocation.location} IS NOT NULL
+        ${driverLocations.location} IS NOT NULL
         AND ST_DWithin(
-            ${driverCurrentLocation.location}::geography,
+            ${driverLocations.location}::geography,
             ST_SetSRID(ST_MakePoint(${myLocation.lng}, ${myLocation.lat}), 4326)::geography,
             ${withinRadius}
         )
     `)
     // .orderBy(sql`ST_Distance(
-    //     ${driverCurrentLocation.location}::geography,
+    //     ${driverLocations.location}::geography,
     //     ST_SetSRID(ST_MakePoint(${myLocation.lng}, ${myLocation.lat}), 4326)::geography
     // )`)
     .limit(10);
 
-    if(driverLocations.length === 0)
+    if(nearbyDriverLocations.length === 0)
         return [];
 
-    const driverIds = driverLocations.map(driver => driver.driverId);
+    const driverIds = nearbyDriverLocations.map(driver => driver.driverId);
 
-    const driverDetails = await db.query.driver.findMany({
+    const driverDetails = await db.query.drivers.findMany({
         where: (driver, { and, eq, inArray }) => and(
             inArray(driver.id, driverIds),
             eq(driver.isAvailable, true),
@@ -57,7 +57,7 @@ export async function nearbyDrivers(myLocation: { lat: number; lng: number }, wi
         }
     });
 
-    const availableDrivers = driverLocations.map(location => {
+    const availableDrivers = nearbyDriverLocations.map(location => {
         const driver = driverDetails.find(details => details.id === location.driverId);
 
         return {

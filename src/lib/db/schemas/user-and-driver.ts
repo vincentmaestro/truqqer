@@ -1,10 +1,10 @@
-import drizzle from 'drizzle-orm/pg-core';
+import * as drizzle from 'drizzle-orm/pg-core';
 import { timestamps } from '../helpers/timestamps';
 
-const genderEnum = drizzle.pgEnum('gender', ['male', 'female', 'other']);
+export const genderEnum = drizzle.pgEnum('gender', ['male', 'female', 'other']);
 
-export const user = drizzle.pgTable(
-    'user',
+export const users = drizzle.pgTable(
+    'users',
     {
         id: drizzle.uuid().defaultRandom().primaryKey(),
         name: drizzle.varchar().notNull(),
@@ -13,7 +13,6 @@ export const user = drizzle.pgTable(
         gender: genderEnum().notNull(),
         password: drizzle.text().notNull(),
         photo: drizzle.text(),
-        searchingForDriver: drizzle.boolean().default(false).notNull(),
         suspended: drizzle.boolean().default(false).notNull(),
         ...timestamps,
     },
@@ -23,8 +22,25 @@ export const user = drizzle.pgTable(
     ]
 );
 
-export const driver = drizzle.pgTable(
-    'driver',
+export const userLocations = drizzle.pgTable(
+    'user_locations',
+    {
+        userId: drizzle.uuid().references(() => users.id).primaryKey(),
+        location: drizzle.geometry({
+            type: 'point',
+            mode: 'xy'
+        }),
+        updatedAt: drizzle.timestamp().default(new Date).notNull()
+            .$onUpdate(() => new Date())
+    },
+    (table) => [
+        drizzle.index('user_id_idx').on(table.userId),
+        drizzle.index('user_location_idx').using('gist', table.location)
+    ]
+);
+
+export const drivers = drizzle.pgTable(
+    'drivers',
     {
         id: drizzle.uuid().defaultRandom().primaryKey(),
         name: drizzle.varchar().notNull(),
@@ -42,6 +58,23 @@ export const driver = drizzle.pgTable(
     (table) => [
         drizzle.index('approved_index').on(table.approved),
         drizzle.index('is_available_index').on(table.isAvailable)
+    ]
+);
+
+export const driverLocations = drizzle.pgTable(
+    'driver_locations',
+    {
+        driverId: drizzle.uuid().references(() => drivers.id).primaryKey(),
+        location: drizzle.geometry({
+            type: 'point',
+            mode: 'xy'
+        }),
+        updatedAt: drizzle.timestamp().default(new Date).notNull()
+            .$onUpdate(() => new Date())
+    },
+    (table) => [
+        drizzle.index('driver_id_idx').on(table.driverId),
+        drizzle.index('driver_location_idx').using('gist', table.location)
     ]
 );
 
@@ -66,11 +99,11 @@ export const session = drizzle.pgTable(
 //                EXPORTING TYPE DEFINITIONS
 //______________________________________________________________________________________________________________
 
-export type User = typeof user.$inferSelect;
-export type AddUser = typeof user.$inferInsert;
+export type User = typeof users.$inferSelect;
+export type AddUser = typeof users.$inferInsert;
 
-export type Driver = typeof driver.$inferSelect;
-export type AddDriver = typeof driver.$inferInsert;
+export type Driver = typeof drivers.$inferSelect;
+export type AddDriver = typeof drivers.$inferInsert;
 
 export type Session = typeof session.$inferSelect;
 export type AddSession = typeof session.$inferInsert;

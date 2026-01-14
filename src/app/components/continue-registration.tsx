@@ -10,7 +10,7 @@ type FormField =
     | { type: 'password', value: string }
     | { type: 'confirm-password', value: string }
 
-const defaultState = {
+const defaultValues = {
     name: '',
     userType: '',
     gender: '',
@@ -18,18 +18,12 @@ const defaultState = {
     confirmPassword: ''
 }
 
-export const initialState = {
+const resultShape = {
     success: false,
-    data: {
-        name: '',
-        userType: '',
-        gender: '',
-        password: '',
-        confirmPassword: ''
-    }
+    data: defaultValues
 }
 
-function reducer(state: typeof defaultState, action: FormField) {
+function reducer(state: typeof defaultValues, action: FormField) {
     switch(action.type) {
         case 'name': return { ...state, name: action.value };
         case 'user-type': return { ...state, userType: action.value };
@@ -48,8 +42,8 @@ export default function ContinueRegistration({ result }: {
         error?: string;
     }
 }) {
-    const [userData, dispatch] = useReducer(reducer, defaultState);
-    const [state, submit, loading] = useActionState(signup, initialState);
+    const [userData, dispatch] = useReducer(reducer, defaultValues);
+    const [state, submit, loading] = useActionState(signup, resultShape);
 
     return(
         <div className="bg-white px-10 py-4 rounded-lg mt-2.5">
@@ -75,10 +69,10 @@ export default function ContinueRegistration({ result }: {
                     <div className="mb-3">
                         <label>Email:</label>
                         <input
-                        type="email" 
+                        type="email"
                         name="email"
-                        value={result.data?.email}
-                        disabled
+                        defaultValue={result.data?.email}
+                        readOnly
                         className='rounded-sm p-0.5 border border-gray-400 block outline-none'
                         />
                     </div>

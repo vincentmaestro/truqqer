@@ -1,20 +1,18 @@
-import { user, driver } from './user-and-driver';
-import { vehicle } from './vehicle';
 import {
-    userCurrentLocation, 
-    driverCurrentLocation
-} from './locations';
-
-
+    users,
+    drivers,
+    userLocations, 
+    driverLocations
+} from './user-and-driver';
+import { vehicle } from './vehicle';
 
 
 
 export default {
-    user,
-    driver,
+    users,
+    drivers,
+    userLocations,
+    driverLocations,
     
     vehicle,
-
-    userCurrentLocation,
-    driverCurrentLocation
 }

@@ -1,12 +1,12 @@
 'use server';
+import { capitalizeInitialLetters, hashPassword, signJwt } from "@/lib/helpers";
 import { GetStartedResult, UserSignupShape } from "@/types/signup";
 import { newUserSchema } from "../lib/helpers/zod/user";
-import z from "zod";
 import { validateWithZod } from "@/lib/helpers/zod/functions";
 import { sendVerificationMail } from "@/lib/utils/mail/verify-email";
-import { capitalizeInitialLetters, hashPassword, signJwt } from "@/lib/helpers";
 import { db } from "@/lib/db";
 import schemas from '@/lib/db/schemas';
+import z from "zod";
 
 export async function getStarted(_: GetStartedResult, formData: FormData) {
     try {
@@ -78,7 +78,7 @@ export async function signup(_: UserSignupShape, formData: FormData) {
             password
         }
         
-        const existingUser = await db.query.user.findFirst({
+        const existingUser = await db.query.users.findFirst({
             where: (user, { eq }) => eq(user.email, newUserData.email)
         });
 
@@ -90,9 +90,9 @@ export async function signup(_: UserSignupShape, formData: FormData) {
                 }
             }
 
-        const newUser = await db.insert(schemas.user)
-            .values(newUserData)
-            .returning();
+        // const newUser = await db.insert(schemas.users)
+        //     .values(newUserData)
+        //     .returning();
     
         return {
             success: true,
@@ -105,6 +105,7 @@ export async function signup(_: UserSignupShape, formData: FormData) {
         };
     }
     catch(err) {
+        console.log('firstly', err);
         return {
             success: false,
             errors: {

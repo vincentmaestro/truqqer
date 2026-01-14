@@ -4,10 +4,10 @@ import { genSalt, hash } from 'bcrypt';
 export function signJwt(
     payload: object,
     secret: string,
-    duration: SignOptions["expiresIn"]
+    expiration: SignOptions["expiresIn"]
   ) {
     return sign(payload, secret, {
-      expiresIn: duration,
+      expiresIn: expiration,
     });
 }
 

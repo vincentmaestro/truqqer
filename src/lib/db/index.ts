@@ -16,5 +16,4 @@ pool.on('error', (err, client) => {
 export const db = drizzle({
     client: pool,
     schema: schemas,
-    casing: 'snake_case'
 });

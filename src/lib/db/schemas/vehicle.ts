@@ -1,5 +1,5 @@
-import drizzle from 'drizzle-orm/pg-core';
-import { driver } from './user-and-driver';
+import * as drizzle from 'drizzle-orm/pg-core';
+import { drivers } from './user-and-driver';
 import { timestamps } from '../helpers/timestamps';
 
 
@@ -17,7 +17,7 @@ export const vehicle = drizzle.pgTable(
     'vehicle',
     {
         id: drizzle.uuid().defaultRandom().primaryKey(),
-        driverId: drizzle.uuid().references(() => driver.id, { onDelete: 'cascade' }).notNull(),
+        driverId: drizzle.uuid().references(() => drivers.id, { onDelete: 'cascade' }).notNull(),
         make: drizzle.varchar().notNull(),
         model: drizzle.varchar().notNull(),
         year: drizzle.integer().notNull(),
