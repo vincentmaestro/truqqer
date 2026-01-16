@@ -1,16 +1,17 @@
 'use client';
-import { useActionState, useReducer } from "react";
+import { useActionState, useEffect, useReducer } from "react";
+import { useRouter } from 'next/navigation';
 import { signup } from "@/actions/signup";
 import { EmailVerificationPayload } from "@/types/signup";
 
-type FormField = 
+type InputField = 
     | { type: 'name', value: string }
     | { type: 'user-type', value: string }
     | { type: 'gender', value: string }
     | { type: 'password', value: string }
     | { type: 'confirm-password', value: string }
 
-const defaultValues = {
+const initialFieldValues = {
     name: '',
     userType: '',
     gender: '',
@@ -18,12 +19,18 @@ const defaultValues = {
     confirmPassword: ''
 }
 
-const resultShape = {
+const initialActionState = {
     success: false,
-    data: defaultValues
+    data: {
+        accessToken: '',
+        email: '',
+        name: '',
+        photo: '',
+        role: ''
+    }
 }
 
-function reducer(state: typeof defaultValues, action: FormField) {
+function reducer(state: typeof initialFieldValues, action: InputField) {
     switch(action.type) {
         case 'name': return { ...state, name: action.value };
         case 'user-type': return { ...state, userType: action.value };
@@ -42,8 +49,13 @@ export default function ContinueRegistration({ result }: {
         error?: string;
     }
 }) {
-    const [userData, dispatch] = useReducer(reducer, defaultValues);
-    const [state, submit, loading] = useActionState(signup, resultShape);
+    const [userData, dispatch] = useReducer(reducer, initialFieldValues);
+    const [state, submit, loading] = useActionState(signup, initialActionState);
+    const router = useRouter();
+
+    // useEffect(() => {
+    //     if(state.data?.role)
+    // }, [state]);
 
     return(
         <div className="bg-white px-10 py-4 rounded-lg mt-2.5">
@@ -155,7 +167,7 @@ export default function ContinueRegistration({ result }: {
                         <div className='mt-1'>
                             { loading ? <img src="/marching_ants.gif" alt="Loading..." /> : '' }
                         </div>
-                        <button className='border-none px-7 py-1 rounded-sm text-white bg-orange-300'>Next</button>
+                        <button className='border-none px-7 py-1 rounded-sm text-white bg-orange-300 cursor-pointer'>Next</button>
                     </div>
                 </form>
             }

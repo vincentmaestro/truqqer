@@ -1,5 +1,5 @@
 {
-  "id": "d4aaacbc-cf4f-4df4-a9fc-3903d84e3e71",
+  "id": "2f09cddc-6008-4ccb-bbb1-950f2428c0cd",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -25,7 +25,7 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": "'2026-01-14 14:39:26.837'"
+          "default": "now()"
         }
       },
       "indexes": {
@@ -71,7 +71,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -108,7 +108,14 @@
           "name": "phone",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'driver'"
         },
         "gender": {
           "name": "gender",
@@ -127,7 +134,7 @@
           "name": "photo",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "approved": {
           "name": "approved",
@@ -161,14 +168,14 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": "'2026-01-14 14:39:26.829'"
+          "default": "now()"
         },
         "updatedAt": {
           "name": "updatedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": "'2026-01-14 14:39:26.829'"
+          "default": "now()"
         }
       },
       "indexes": {
@@ -259,7 +266,7 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": "'2026-01-14 14:39:26.837'"
+          "default": "'2026-01-16 17:57:40.076'"
         },
         "expiresAt": {
           "name": "expiresAt",
@@ -321,7 +328,7 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": "'2026-01-14 14:39:26.834'"
+          "default": "now()"
         }
       },
       "indexes": {
@@ -367,7 +374,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -406,6 +413,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "role": {
+          "name": "role",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'user'"
+        },
         "gender": {
           "name": "gender",
           "type": "gender",
@@ -437,14 +451,14 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": "'2026-01-14 14:39:26.829'"
+          "default": "now()"
         },
         "updatedAt": {
           "name": "updatedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": "'2026-01-14 14:39:26.829'"
+          "default": "now()"
         }
       },
       "indexes": {
@@ -590,14 +604,14 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": "'2026-01-14 14:39:26.829'"
+          "default": "now()"
         },
         "updatedAt": {
           "name": "updatedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": "'2026-01-14 14:39:26.829'"
+          "default": "now()"
         }
       },
       "indexes": {

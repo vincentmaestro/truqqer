@@ -4,7 +4,7 @@ export default function AuthLayout({ children }: {
     children: React.ReactNode
 }) {
     return(
-        <div className="w-full h-screen fixed bg-[url('/truck1.webp')] bg-no-repeat bg-cover bg-center">
+        <div className="w-full h-screen overflow-y-scroll bg-[url('/truck1.webp')] bg-no-repeat bg-cover bg-center">
             <Nav />
             <div className="px-[4%] grid grid-cols-2 gap-x-[8%] items-center">
                 { children }

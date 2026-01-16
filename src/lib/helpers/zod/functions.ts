@@ -1,5 +1,9 @@
 import z from 'zod';
 
+export function validateEmail(email: string) {
+  return z.email().safeParse(email);
+}
+
 /**
  * Validates a Zod object and returns the outcome.
  * @param {unknown} data - The data to be validated (must be a zod object). 

@@ -1,7 +1,7 @@
 import { JwtPayload, sign, SignOptions, verify } from "jsonwebtoken";
 import { genSalt, hash } from 'bcrypt';
 
-export function signJwt(
+export function signToken(
     payload: object,
     secret: string,
     expiration: SignOptions["expiresIn"]

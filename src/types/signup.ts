@@ -1,4 +1,3 @@
-import { JwtPayload } from 'jsonwebtoken';
 
 export type GetStartedResult = {
     success: boolean,
@@ -10,14 +9,17 @@ export interface EmailVerificationPayload {
     email: string
 }
 
-export type UserSignupShape = {
+type NewSignupData = {
+    accessToken: string;
+    email: string;
+    name: string;
+    photo: string | null;
+    role: string;
+}
+
+export type NewSignupShape = {
     success: boolean;
-    data?: {
-        name: string;
-        userType: string;
-        password: string;
-        confirmPassword: string;
-    };
+    data?: NewSignupData;
     errors?: {
         [k: string]: string | undefined
     }

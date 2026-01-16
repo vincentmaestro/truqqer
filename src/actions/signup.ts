@@ -1,12 +1,11 @@
 'use server';
-import { capitalizeInitialLetters, hashPassword, signJwt } from "@/lib/helpers";
-import { GetStartedResult, UserSignupShape } from "@/types/signup";
+import { capitalizeInitialLetters, hashPassword, signToken } from "@/lib/helpers";
+import { GetStartedResult, NewSignupShape } from "@/types/signup";
 import { newUserSchema } from "../lib/helpers/zod/user";
-import { validateWithZod } from "@/lib/helpers/zod/functions";
+import { validateEmail, validateWithZod } from "@/lib/helpers/zod/functions";
 import { sendVerificationMail } from "@/lib/utils/mail/verify-email";
 import { db } from "@/lib/db";
 import schemas from '@/lib/db/schemas';
-import z from "zod";
 
 export async function getStarted(_: GetStartedResult, formData: FormData) {
     try {
@@ -15,12 +14,12 @@ export async function getStarted(_: GetStartedResult, formData: FormData) {
         if (typeof email !== 'string') 
             return { success: false, error: 'Invalid email' };
 
-        const isValidEmail = z.email().safeParse(email);
+        const isValidEmail = validateEmail(email);
 
         if(!isValidEmail.success)
             return { success: false, error: isValidEmail.error.message };
 
-        const token = signJwt(
+        const token = signToken(
             { email: isValidEmail.data },
             process.env.EMAIL_VERIFICATION_SECRET!,
             '1d'
@@ -41,7 +40,7 @@ export async function getStarted(_: GetStartedResult, formData: FormData) {
     }
 }
 
-export async function signup(_: UserSignupShape, formData: FormData) {
+export async function signup(_: NewSignupShape, formData: FormData) {
     try {
         const json = {
             name: formData.get('full-name'),
@@ -70,7 +69,7 @@ export async function signup(_: UserSignupShape, formData: FormData) {
     
         const name = capitalizeInitialLetters(result.data?.name!);
         const password = await hashPassword(result.data?.password!);
-        const newUserData = {
+        const signupData = {
             email: String(formData.get('email')),
             name,
             userType: result.data?.userType!,
@@ -79,7 +78,7 @@ export async function signup(_: UserSignupShape, formData: FormData) {
         }
         
         const existingUser = await db.query.users.findFirst({
-            where: (user, { eq }) => eq(user.email, newUserData.email)
+            where: (user, { eq }) => eq(user.email, signupData.email)
         });
 
         if(existingUser)
@@ -90,22 +89,51 @@ export async function signup(_: UserSignupShape, formData: FormData) {
                 }
             }
 
-        // const newUser = await db.insert(schemas.users)
-        //     .values(newUserData)
-        //     .returning();
-    
-        return {
-            success: true,
-            data: {
-                name: 'Umeh',
-                userType: "Driver",
-                password: 'tjekhlefe',
-                confirmPassword: 'ejfkrrg'
-            }
-        };
+        if(signupData.userType === 'user') {
+            const [newSignup] = await db.insert(schemas.users)
+                .values(signupData)
+                .returning();
+
+            const accessToken = signToken(
+                { _: newSignup.id },
+                process.env.ACCESS_TOKEN_SECRET!,
+                '30m'
+            );
+
+            return {
+                success: true,
+                data: {
+                    accessToken,
+                    email: newSignup.email,
+                    name: newSignup.name,
+                    photo: newSignup.photo,
+                    role: newSignup.role
+                }
+            };
+        }
+
+        const [newSignup] = await db.insert(schemas.drivers)
+                .values(signupData)
+                .returning();
+
+            const accessToken = signToken(
+                { _: newSignup.id },
+                process.env.ACCESS_TOKEN_SECRET!,
+                '30m'
+            );
+
+            return {
+                success: true,
+                data: {
+                    accessToken,
+                    email: newSignup.email,
+                    name: newSignup.name,
+                    photo: newSignup.photo,
+                    role: newSignup.role
+                }
+            };
     }
     catch(err) {
-        console.log('firstly', err);
         return {
             success: false,
             errors: {

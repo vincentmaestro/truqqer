@@ -1,14 +1,17 @@
-import { JwtPayload } from 'jsonwebtoken'
+import { JwtPayload } from 'jsonwebtoken';
+import { EmailVerificationPayload } from "@/types/signup";
+import { validateEmail } from '@/lib/helpers/zod/functions';
 import { verifyToken } from '@/lib/helpers';
 import ContinueRegistration from "@/app/components/continue-registration";
-import { EmailVerificationPayload } from "@/types/signup";
 
-function isEmailVerificationPayload(
+function isValidEmail(
     payload: JwtPayload
 ): payload is EmailVerificationPayload {
+    const { email } = payload;
+    const { success } = validateEmail(email);
     return(
         typeof payload === 'object' &&
-        typeof payload.email === 'string'
+        success
     )
 }
 
@@ -27,7 +30,7 @@ export default async function ContinueRegistrationPage({ searchParams }: {
     const result = verifyToken(
         token,
         process.env.EMAIL_VERIFICATION_SECRET!,
-        isEmailVerificationPayload
+        isValidEmail
     );
 
     return <ContinueRegistration result={result} />

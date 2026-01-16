@@ -1,7 +1,11 @@
 import * as drizzle from 'drizzle-orm/pg-core';
 import { timestamps } from '../helpers/timestamps';
 
-export const genderEnum = drizzle.pgEnum('gender', ['male', 'female', 'other']);
+export const genderEnum = drizzle.pgEnum('gender', [
+    'male',
+    'female',
+    'other'
+]);
 
 export const users = drizzle.pgTable(
     'users',
@@ -10,6 +14,7 @@ export const users = drizzle.pgTable(
         name: drizzle.varchar().notNull(),
         email: drizzle.varchar().unique().notNull(),
         phone: drizzle.varchar().unique(),
+        role: drizzle.varchar().default('user').notNull(),
         gender: genderEnum().notNull(),
         password: drizzle.text().notNull(),
         photo: drizzle.text(),
@@ -25,12 +30,12 @@ export const users = drizzle.pgTable(
 export const userLocations = drizzle.pgTable(
     'user_locations',
     {
-        userId: drizzle.uuid().references(() => users.id).primaryKey(),
+        userId: drizzle.uuid().references(() => users.id, { onDelete: 'cascade' }).primaryKey(),
         location: drizzle.geometry({
             type: 'point',
             mode: 'xy'
         }),
-        updatedAt: drizzle.timestamp().default(new Date).notNull()
+        updatedAt: drizzle.timestamp().defaultNow().notNull()
             .$onUpdate(() => new Date())
     },
     (table) => [
@@ -45,10 +50,11 @@ export const drivers = drizzle.pgTable(
         id: drizzle.uuid().defaultRandom().primaryKey(),
         name: drizzle.varchar().notNull(),
         email: drizzle.varchar().unique().notNull(),
-        phone: drizzle.varchar().unique().notNull(),
+        phone: drizzle.varchar().unique(),
+        role: drizzle.varchar().default('driver').notNull(),
         gender: genderEnum().notNull(),
         password: drizzle.text().notNull(),
-        photo: drizzle.text().notNull(),
+        photo: drizzle.text(),
         approved: drizzle.boolean().default(false).notNull(),
         isAvailable: drizzle.boolean().default(false).notNull(),
         rating: drizzle.numeric({ precision: 4, scale: 2 }),
@@ -64,12 +70,12 @@ export const drivers = drizzle.pgTable(
 export const driverLocations = drizzle.pgTable(
     'driver_locations',
     {
-        driverId: drizzle.uuid().references(() => drivers.id).primaryKey(),
+        driverId: drizzle.uuid().references(() => drivers.id, { onDelete: 'cascade' }).primaryKey(),
         location: drizzle.geometry({
             type: 'point',
             mode: 'xy'
         }),
-        updatedAt: drizzle.timestamp().default(new Date).notNull()
+        updatedAt: drizzle.timestamp().defaultNow().notNull()
             .$onUpdate(() => new Date())
     },
     (table) => [
@@ -94,16 +100,10 @@ export const session = drizzle.pgTable(
 );
 
 
-//_____________________________________________________________________________________________________________
-
-//                EXPORTING TYPE DEFINITIONS
-//______________________________________________________________________________________________________________
+//===================================================================================
+// --------------------------EXPORTING TYPE DEFINITIONS------------------------------
+//===================================================================================
 
 export type User = typeof users.$inferSelect;
-export type AddUser = typeof users.$inferInsert;
-
 export type Driver = typeof drivers.$inferSelect;
-export type AddDriver = typeof drivers.$inferInsert;
-
 export type Session = typeof session.$inferSelect;
-export type AddSession = typeof session.$inferInsert;

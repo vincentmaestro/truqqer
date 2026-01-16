@@ -1,28 +1,27 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
-
 CREATE TYPE "public"."gender" AS ENUM('male', 'female', 'other');--> statement-breakpoint
 CREATE TYPE "public"."vehicle_type" AS ENUM('flatbed', 'boxed', 'tow van', 'tipper', 'car carrier', 'mini truck', 'tanker');--> statement-breakpoint
-
 CREATE TABLE "driver_locations" (
 	"driverId" uuid PRIMARY KEY NOT NULL,
 	"location" geometry(point),
-	"updatedAt" timestamp DEFAULT '2026-01-14 14:39:26.837' NOT NULL
+	"updatedAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "drivers" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" varchar NOT NULL,
 	"email" varchar NOT NULL,
-	"phone" varchar NOT NULL,
+	"phone" varchar,
+	"role" varchar DEFAULT 'driver' NOT NULL,
 	"gender" "gender" NOT NULL,
 	"password" text NOT NULL,
-	"photo" text NOT NULL,
+	"photo" text,
 	"approved" boolean DEFAULT false NOT NULL,
 	"isAvailable" boolean DEFAULT false NOT NULL,
 	"rating" numeric(4, 2),
 	"suspended" boolean DEFAULT false NOT NULL,
-	"createdAt" timestamp DEFAULT '2026-01-14 14:39:26.829' NOT NULL,
-	"updatedAt" timestamp DEFAULT '2026-01-14 14:39:26.829' NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "drivers_email_unique" UNIQUE("email"),
 	CONSTRAINT "drivers_phone_unique" UNIQUE("phone")
 );
@@ -32,7 +31,7 @@ CREATE TABLE "session" (
 	"token" text NOT NULL,
 	"ip_address" varchar,
 	"user_agent" text,
-	"createdAt" timestamp DEFAULT '2026-01-14 14:39:26.837' NOT NULL,
+	"createdAt" timestamp DEFAULT '2026-01-16 17:57:40.076' NOT NULL,
 	"expiresAt" timestamp NOT NULL,
 	CONSTRAINT "session_token_unique" UNIQUE("token")
 );
@@ -40,7 +39,7 @@ CREATE TABLE "session" (
 CREATE TABLE "user_locations" (
 	"userId" uuid PRIMARY KEY NOT NULL,
 	"location" geometry(point),
-	"updatedAt" timestamp DEFAULT '2026-01-14 14:39:26.834' NOT NULL
+	"updatedAt" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -48,12 +47,13 @@ CREATE TABLE "users" (
 	"name" varchar NOT NULL,
 	"email" varchar NOT NULL,
 	"phone" varchar,
+	"role" varchar DEFAULT 'user' NOT NULL,
 	"gender" "gender" NOT NULL,
 	"password" text NOT NULL,
 	"photo" text,
 	"suspended" boolean DEFAULT false NOT NULL,
-	"createdAt" timestamp DEFAULT '2026-01-14 14:39:26.829' NOT NULL,
-	"updatedAt" timestamp DEFAULT '2026-01-14 14:39:26.829' NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "users_email_unique" UNIQUE("email"),
 	CONSTRAINT "users_phone_unique" UNIQUE("phone")
 );
@@ -72,13 +72,13 @@ CREATE TABLE "vehicle" (
 	"licenseImage" text NOT NULL,
 	"insuranceDocument" text,
 	"capacityKg" integer,
-	"createdAt" timestamp DEFAULT '2026-01-14 14:39:26.829' NOT NULL,
-	"updatedAt" timestamp DEFAULT '2026-01-14 14:39:26.829' NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "vehicle_plateNumber_unique" UNIQUE("plateNumber")
 );
 --> statement-breakpoint
-ALTER TABLE "driver_locations" ADD CONSTRAINT "driver_locations_driverId_drivers_id_fk" FOREIGN KEY ("driverId") REFERENCES "public"."drivers"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "user_locations" ADD CONSTRAINT "user_locations_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "driver_locations" ADD CONSTRAINT "driver_locations_driverId_drivers_id_fk" FOREIGN KEY ("driverId") REFERENCES "public"."drivers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_locations" ADD CONSTRAINT "user_locations_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "vehicle" ADD CONSTRAINT "vehicle_driverId_drivers_id_fk" FOREIGN KEY ("driverId") REFERENCES "public"."drivers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "driver_id_idx" ON "driver_locations" USING btree ("driverId");--> statement-breakpoint
 CREATE INDEX "driver_location_idx" ON "driver_locations" USING gist ("location");--> statement-breakpoint
