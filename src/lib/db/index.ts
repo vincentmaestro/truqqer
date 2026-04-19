@@ -9,8 +9,10 @@ const pool = new Pool({
 });
 
 pool.on('error', (err, client) => {
-    logger.error(`Unexpected error on idle client: ${err}`);
-    process.exit(-1);
+    logger('database error')
+        .error(`Unexpected error on idle client`, err);
+        
+    process.exit(1);
 });
 
 export const db = drizzle({

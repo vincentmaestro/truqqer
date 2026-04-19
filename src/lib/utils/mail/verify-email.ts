@@ -3,18 +3,17 @@
 import { createTransport } from 'nodemailer';
 
 const transporter = createTransport({
-    host: "sandbox.smtp.mailtrap.io",
-    port: 2525,
-    secure: false,
+    host: process.env.SMTP_HOST!,
+    secure: true,
     auth: {
         user: process.env.SMTP_AUTH!,
-        pass: process.env.SMTP_PASSWORD!
+        pass: process.env.SMTP_PW!
     }
 });
 
-export async function sendVerificationMail(recipient: string, token: string) {
+export async function sendEmailVerificationLink(recipient: string, token: string) {
     const message = {
-        from: 'Truqqer Co <noreply@truqqer.com>',
+        from: `Truqqer Co <${process.env.SMTP_AUTH!}>`,
         to: recipient,
         subject: 'Confirm Your Email Address',
         html: `
@@ -177,7 +176,7 @@ export async function sendVerificationMail(recipient: string, token: string) {
                         <p>You have received this mail to verify your email address (${recipient}) to enable you proceed to enjoy our services.</p>
                         <br>
                         <p>Follow the link below to continue registration</p>
-                        <a class="proceed" href="http://localhost:3000/signup/continue-registration?token=${token}">Continue Registration</a>
+                        <a class="proceed" href="http://localhost:3000/signup?tab=phone&token=${token}">Continue Registration</a>
                         <br>
                         <br>
                         <p>Reachout to us for any issues or enquiries at</p>
@@ -191,7 +190,7 @@ export async function sendVerificationMail(recipient: string, token: string) {
                     </div>
 
                     <div class="address">
-                        <small>18a Caroline, Pearl Gardens, Lekki</small>
+                        <small>Pearl Cola, Pearl Gardens, Lekki</small>
                         <small>Lagos, Nigeria</small>
                     </div>
                 </div>
@@ -200,18 +199,8 @@ export async function sendVerificationMail(recipient: string, token: string) {
         `
     }
 
-    try {
-        const info = await transporter.sendMail(message);
+    const info = await transporter.sendMail(message);
             
-        if(info.response !== '250 2.0.0 Ok: queued')
-            throw new Error('failed to semd email');
-        
-        return { success: true, message: 'email sent!' };
-    }
-    catch(err) {
-        return {
-            success: false,
-            error: err instanceof Error ? err.message : String(err)
-        }
-    }
+    if(!info.response.includes('250 OK'))
+        throw new Error('Failed to send. Please try again.');
 }

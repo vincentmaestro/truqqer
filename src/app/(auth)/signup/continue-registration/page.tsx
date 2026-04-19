@@ -1,37 +1,27 @@
-import { JwtPayload } from 'jsonwebtoken';
-import { EmailVerificationPayload } from "@/types/signup";
-import { validateEmail } from '@/lib/helpers/zod/functions';
 import { verifyToken } from '@/lib/helpers';
-import ContinueRegistration from "@/app/components/continue-registration";
-
-function isValidEmail(
-    payload: JwtPayload
-): payload is EmailVerificationPayload {
-    const { email } = payload;
-    const { success } = validateEmail(email);
-    return(
-        typeof payload === 'object' &&
-        success
-    )
-}
+import ContinueRegistration from '@/app/components/signup/continue-registration';
+import Email from "@/app/components/signup/email";
 
 export default async function ContinueRegistrationPage({ searchParams }: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
     const { token } = await searchParams;
-    if(!token) {
-        return <ContinueRegistration result={{ success: false, error: 'no token provided.' }} />
-    }
 
-    if(Array.isArray(token)) {
-        return <ContinueRegistration result={{ success: false, error: 'invalid url. make sure to click the link from mailbox or paste correctly.' }} />
-    }
+    if(!token)
+        return <Email />
 
-    const result = verifyToken(
+    if(Array.isArray(token))
+        return <Email info="The link you entered might be incorrect or broken" />
+
+    const validToken = verifyToken(
         token,
-        process.env.EMAIL_VERIFICATION_SECRET!,
-        isValidEmail
+        process.env.PHONE_VERIFICATION_SECRET!
     );
 
-    return <ContinueRegistration result={result} />
+    if(!validToken.success)
+        return <Email info="The link you entered might be expired or broken" />
+
+    const { email, phone } = validToken.data;
+
+    return <ContinueRegistration email={email} phone={phone} />
 }

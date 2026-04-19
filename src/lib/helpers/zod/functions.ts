@@ -5,13 +5,13 @@ export function validateEmail(email: string) {
 }
 
 /**
- * Validates a Zod object and returns the outcome.
+ * Validates an object against a defined Zod schema.
  * @param {unknown} data - The data to be validated (must be a zod object). 
  * @param {z.ZodObject<Shape>} schema - The zod schema to be validated against.
  * @returns {{ success: boolean, data?: unknown, errors?: Record<string, string> }}
  */
 
-export function validateWithZod<Shape extends z.ZodRawShape>(
+export function validateObjectWithZod<Shape extends z.ZodRawShape>(
     data: unknown,
     schema: z.ZodObject<Shape>
   ) {
@@ -21,11 +21,11 @@ export function validateWithZod<Shape extends z.ZodRawShape>(
       const tree = z.treeifyError(result.error);
 
       if (!('properties' in tree) || !tree.properties) 
-        return { success: false, errors: { message: 'failed to validate schema. (zod objects only)' } };
+        return { success: false, error: { message: 'failed to validate schema. (zod objects only)' } };
   
       return {
         success: false,
-        errors: Object.fromEntries(
+        error: Object.fromEntries(
           Object.entries(tree.properties).map(([key, value]) => [
           key,
           value?.errors?.join(', '),

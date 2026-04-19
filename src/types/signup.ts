@@ -1,12 +1,8 @@
 
-export type GetStartedResult = {
+export type ActionResult<T> = {
     success: boolean,
-    data?: string,
-    error?: string
-}
-
-export interface EmailVerificationPayload {
-    email: string
+    message: string,
+    data?: T
 }
 
 type NewSignupData = {

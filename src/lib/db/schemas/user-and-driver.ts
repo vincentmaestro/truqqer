@@ -13,7 +13,7 @@ export const users = drizzle.pgTable(
         id: drizzle.uuid().defaultRandom().primaryKey(),
         name: drizzle.varchar().notNull(),
         email: drizzle.varchar().unique().notNull(),
-        phone: drizzle.varchar().unique(),
+        phone: drizzle.varchar().unique().notNull(),
         role: drizzle.varchar().default('user').notNull(),
         gender: genderEnum().notNull(),
         password: drizzle.text().notNull(),
