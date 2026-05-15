@@ -11,19 +11,21 @@ import { db } from "@/lib/db";
 import schemas from '@/lib/db/schemas';
 import { emailVerifyThrottle } from "@/lib/redis/throttle/email";
 import { sendOtpThrottle, confirmOtpThrottle } from "@/lib/redis/throttle/sms";
+import { ipThrottle } from "@/lib/redis/throttle/ip-address";
 
 export async function handleVerifyEmail(_: ActionResult<null>, formData: FormData) {
     const captchaToken = String(formData.get('token'));
     const email = String(formData.get('email'));
 
     try {
-        // await captcha(captchaToken);
+        await captcha(captchaToken);
 
         const isValidEmail = validateEmail(email);
 
         if(!isValidEmail.success)
             throw new Error('Invalid email address');
 
+        await ipThrottle();
         await emailVerifyThrottle(email);
 
         // const existingUser = await db.query.users.findFirst({
@@ -33,7 +35,7 @@ export async function handleVerifyEmail(_: ActionResult<null>, formData: FormDat
         // if(existingUser)
         //     return {
         //         success: false,
-        //         message: 'an account already exists for this user.'
+        //         message: 'verification mail sent! Check inbox or spam folder to continue.'
         //     }
 
         const token = signToken(
@@ -42,9 +44,10 @@ export async function handleVerifyEmail(_: ActionResult<null>, formData: FormDat
             '1h'
         );
         
+        
         await sendEmailVerificationLink(isValidEmail.data, token);
 
-        return { success: true, message: 'verification mail sent! Check inbox or spam folder to continue.' };
+        return { success: true, message: 'Check your mail inbox or spam folder to continue.' };
     }
     catch(err) {
         return {
@@ -60,11 +63,12 @@ export async function handleVerifyPhone(_: ActionResult<string>, formData: FormD
     const captchaToken = String(formData.get('captcha-token'));
 
     try{
-        // await captcha(captchaToken);
+        await captcha(captchaToken);
 
         if(phone.length < 10 || phone.length > 11 || !/^\d{10,11}$/.test(phone))
             throw new Error('Invalid phone number');
 
+        await ipThrottle();
         await sendOtpThrottle(phone);
 
         const phoneIntlFormat = phone.length === 11 ?
@@ -75,7 +79,8 @@ export async function handleVerifyPhone(_: ActionResult<string>, formData: FormD
 
         const token = signToken(
             { email, phone: phoneIntlFormat },
-            process.env.PHONE_VERIFICATION_SECRET!
+            process.env.PHONE_VERIFICATION_SECRET!,
+            '1h'
         );
 
         return {
@@ -99,17 +104,19 @@ export async function handleConfirmationCode(_: ActionResult<null>, formData: Fo
     let continueRegistration = false;
     
     try {
-        // await captcha(captchaToken);
+        await captcha(captchaToken);
 
         const result = verifyToken(token, process.env.PHONE_VERIFICATION_SECRET!);
 
         if(!result.success)
             return {
                 success: false,
-                message: 'Verification failed'
+                message: 'Verification failed. Refresh this page to retry.'
             }
 
         const { phone } = result.data;
+        
+        await ipThrottle();
         await confirmOtpThrottle(phone);
 
         const otp = await redis.get(`sms-otp:${phone}`);
@@ -165,6 +172,8 @@ export async function signup(_: NewSignupShape, formData: FormData) {
                 }
             }
         }
+
+        await ipThrottle();
     
         const name = capitalizeInitialLetters(result.data?.name!);
         const password = await hashPassword(result.data?.password!);
@@ -217,25 +226,25 @@ export async function signup(_: NewSignupShape, formData: FormData) {
         }
 
         const [newSignup] = await db.insert(schemas.drivers)
-                .values(signupData)
-                .returning();
+            .values(signupData)
+            .returning();
 
-            const accessToken = signToken(
-                { _: newSignup.id },
-                process.env.ACCESS_TOKEN_SECRET!,
-                '30m'
-            );
+        const accessToken = signToken(
+            { _: newSignup.id },
+            process.env.ACCESS_TOKEN_SECRET!,
+            '30m'
+        );
 
-            return {
-                success: true,
-                data: {
-                    accessToken,
-                    email: newSignup.email,
-                    name: newSignup.name,
-                    photo: newSignup.photo,
-                    role: newSignup.role
-                }
-            };
+        return {
+            success: true,
+            data: {
+                accessToken,
+                email: newSignup.email,
+                name: newSignup.name,
+                photo: newSignup.photo,
+                role: newSignup.role
+            }
+        };
     }
     catch(err) {
         return {

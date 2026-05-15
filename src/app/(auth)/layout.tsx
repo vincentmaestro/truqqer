@@ -6,10 +6,10 @@ export default function AuthLayout({ children }: {
 }) {
     return(
         <div className="w-full h-screen overflow-y-scroll bg-[url('/truck1.webp')] bg-no-repeat bg-cover bg-center">
-            {/* <Script
+            <Script
             src='https://www.google.com/recaptcha/api.js?render=6LfYZKUsAAAAAB_0BQnWUfHOjWBjVrOayt4aSZvP'
             strategy='lazyOnload'
-            /> */}
+            />
             <Nav />
             <div className="px-[4%] grid grid-cols-2 gap-x-[8%] items-center">
                 { children }

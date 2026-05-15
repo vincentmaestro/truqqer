@@ -12,14 +12,13 @@ export default function Email({ info }: {
         e.preventDefault();
 
         const form = new FormData(e.currentTarget);
+        const token = await grecaptcha.execute(
+            '6LfYZKUsAAAAAB_0BQnWUfHOjWBjVrOayt4aSZvP',
+            { action: 'submit' }
+        );
         
         startTransition(async () => {
-            // const token = await grecaptcha.execute(
-            //     '6LfYZKUsAAAAAB_0BQnWUfHOjWBjVrOayt4aSZvP',
-            //     { action: 'submit' }
-            // );
-    
-            // form.set('token', token);
+            form.set('token', token);
     
             submitEmail(form);
         });

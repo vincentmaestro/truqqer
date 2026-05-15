@@ -31,7 +31,7 @@ CREATE TABLE "session" (
 	"token" text NOT NULL,
 	"ip_address" varchar,
 	"user_agent" text,
-	"createdAt" timestamp DEFAULT '2026-01-16 17:57:40.076' NOT NULL,
+	"createdAt" timestamp DEFAULT '2026-05-15 11:45:25.138' NOT NULL,
 	"expiresAt" timestamp NOT NULL,
 	CONSTRAINT "session_token_unique" UNIQUE("token")
 );
@@ -46,7 +46,7 @@ CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" varchar NOT NULL,
 	"email" varchar NOT NULL,
-	"phone" varchar,
+	"phone" varchar NOT NULL,
 	"role" varchar DEFAULT 'user' NOT NULL,
 	"gender" "gender" NOT NULL,
 	"password" text NOT NULL,

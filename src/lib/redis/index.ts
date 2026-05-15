@@ -1,9 +1,5 @@
-import { createClient, RedisClientType } from "redis";
+import { createClient } from "redis";
 import logger from "@/lib/utils/logger";
-
-declare global {
-    var redis: RedisClientType;
-}
 
 const redis = 
     globalThis.redis ??

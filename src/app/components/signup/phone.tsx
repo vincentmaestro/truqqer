@@ -18,14 +18,13 @@ export default function Phone({ email }: {
         e.preventDefault();
 
         const form = new FormData(e.currentTarget);
-        
-        startTransition(async () => {
-            // const captchaToken = await grecaptcha.execute(
-            //     '6LfYZKUsAAAAAB_0BQnWUfHOjWBjVrOayt4aSZvP',
-            //     { action: 'submit' }
-            // );
-            // form.set('captcha-token', captchaToken);
+        const captchaToken = await grecaptcha.execute(
+            '6LfYZKUsAAAAAB_0BQnWUfHOjWBjVrOayt4aSZvP',
+            { action: 'submit' }
+        );
 
+        startTransition(() => {
+            form.set('captcha-token', captchaToken);
             form.set('email', email);
     
             sendVerificationCode(form);
@@ -74,13 +73,13 @@ export default function Phone({ email }: {
         e.preventDefault();
 
         const form = new FormData(e.currentTarget);
-        
-        startTransition(async () => {
-            // const captchaToken = await grecaptcha.execute(
-            //     '6LfYZKUsAAAAAB_0BQnWUfHOjWBjVrOayt4aSZvP',
-            //     { action: 'submit' }
-            // );
-            // form.set('captcha-token', captchaToken);
+        const captchaToken = await grecaptcha.execute(
+            '6LfYZKUsAAAAAB_0BQnWUfHOjWBjVrOayt4aSZvP',
+            { action: 'submit' }
+        );
+
+        startTransition(() => {
+            form.set('captcha-token', captchaToken);
 
             const code = digits.join('');
             form.set('code', code);

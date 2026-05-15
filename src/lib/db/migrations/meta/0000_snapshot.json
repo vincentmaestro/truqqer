@@ -1,5 +1,5 @@
 {
-  "id": "2f09cddc-6008-4ccb-bbb1-950f2428c0cd",
+  "id": "ec2a13bf-7e6f-4121-abf9-cf5a9de9f4ec",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -266,7 +266,7 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": "'2026-01-16 17:57:40.076'"
+          "default": "'2026-05-15 11:45:25.138'"
         },
         "expiresAt": {
           "name": "expiresAt",
@@ -411,7 +411,7 @@
           "name": "phone",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "role": {
           "name": "role",
