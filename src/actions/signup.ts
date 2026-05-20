@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { validateEmail, validateObjectWithZod } from "@/lib/helpers/zod/functions";
 import { captcha } from "@/lib/utils/captcha";
-import { ActionResult, NewSignupShape } from "@/types/signup";
+import { ActionResult, SignupErrorShape } from "@/types/signup";
 import { sendEmailVerificationLink } from "@/lib/utils/mail/verify-email";
 import { sendSMSVerificationCode } from "@/lib/utils/sms/verify-phone";
 import { capitalizeInitialLetters, hashPassword, signToken, verifyToken } from "@/lib/helpers";
@@ -10,22 +10,23 @@ import { newUserSchema } from "@/lib/helpers/zod/user";
 import { db } from "@/lib/db";
 import schemas from '@/lib/db/schemas';
 import { emailVerifyThrottle } from "@/lib/redis/throttle/email";
-import { sendOtpThrottle, confirmOtpThrottle } from "@/lib/redis/throttle/sms";
+import { smsOtpThrottle, confirmOtpThrottle } from "@/lib/redis/throttle/sms";
 import { ipThrottle } from "@/lib/redis/throttle/ip-address";
+import { cookies } from "next/headers";
 
 export async function handleVerifyEmail(_: ActionResult<null>, formData: FormData) {
-    const captchaToken = String(formData.get('token'));
+    const captchaToken = String(formData.get('captcha-token'));
     const email = String(formData.get('email'));
 
     try {
         await captcha(captchaToken);
+        await ipThrottle();
 
         const isValidEmail = validateEmail(email);
 
         if(!isValidEmail.success)
             throw new Error('Invalid email address');
 
-        await ipThrottle();
         await emailVerifyThrottle(email);
 
         // const existingUser = await db.query.users.findFirst({
@@ -35,7 +36,7 @@ export async function handleVerifyEmail(_: ActionResult<null>, formData: FormDat
         // if(existingUser)
         //     return {
         //         success: false,
-        //         message: 'verification mail sent! Check inbox or spam folder to continue.'
+        //         message: 'Check inbox or spam folder for steps to continue.'
         //     }
 
         const token = signToken(
@@ -44,10 +45,9 @@ export async function handleVerifyEmail(_: ActionResult<null>, formData: FormDat
             '1h'
         );
         
-        
         await sendEmailVerificationLink(isValidEmail.data, token);
 
-        return { success: true, message: 'Check your mail inbox or spam folder to continue.' };
+        return { success: true, message: 'Check your mail inbox or spam folder for steps to continue.' };
     }
     catch(err) {
         return {
@@ -64,12 +64,12 @@ export async function handleVerifyPhone(_: ActionResult<string>, formData: FormD
 
     try{
         await captcha(captchaToken);
+        await ipThrottle();
 
         if(phone.length < 10 || phone.length > 11 || !/^\d{10,11}$/.test(phone))
             throw new Error('Invalid phone number');
 
-        await ipThrottle();
-        await sendOtpThrottle(phone);
+        await smsOtpThrottle(phone);
 
         const phoneIntlFormat = phone.length === 11 ?
             `+234${phone.substring(1)}` :
@@ -105,6 +105,7 @@ export async function handleConfirmationCode(_: ActionResult<null>, formData: Fo
     
     try {
         await captcha(captchaToken);
+        await ipThrottle();
 
         const result = verifyToken(token, process.env.PHONE_VERIFICATION_SECRET!);
 
@@ -114,9 +115,9 @@ export async function handleConfirmationCode(_: ActionResult<null>, formData: Fo
                 message: 'Verification failed. Refresh this page to retry.'
             }
 
-        const { phone } = result.data;
+   
+            const { phone } = result.data;
         
-        await ipThrottle();
         await confirmOtpThrottle(phone);
 
         const otp = await redis.get(`sms-otp:${phone}`);
@@ -137,7 +138,7 @@ export async function handleConfirmationCode(_: ActionResult<null>, formData: Fo
         }
     }
 
-    if(continueRegistration)
+    if(continueRegistration) 
         redirect(`/signup/continue-registration?token=${token}`);
 
     return {
@@ -146,7 +147,7 @@ export async function handleConfirmationCode(_: ActionResult<null>, formData: Fo
     }
 }
 
-export async function signup(_: NewSignupShape, formData: FormData) {
+export async function signup(_: SignupErrorShape, formData: FormData) {
     const json = {
         name: formData.get('full-name'),
         userType: formData.get('user-type'),
@@ -154,38 +155,37 @@ export async function signup(_: NewSignupShape, formData: FormData) {
         password: formData.get('password'),
         confirmPassword: formData.get('confirm-password')
     };
+    const captchaToken = String(formData.get('captcha-token'));
+    const cookieStore = await cookies();
 
     try {
-        let result = validateObjectWithZod(json, newUserSchema);
+        await captcha(captchaToken);
+        // await ipThrottle();
 
+        const result = validateObjectWithZod(json, newUserSchema);
         if(!result.success)
             return {
-                success: false,
+                success: false as const,
                 errors: result.error
             }
 
         if(result.success && result.data?.password !== result.data?.confirmPassword) {
             return {
-                success: false,
+                success: false as const,
                 errors: {
                     message: 'passwords do not match!'
                 }
             }
         }
 
-        await ipThrottle();
-    
-        const name = capitalizeInitialLetters(result.data?.name!);
-        const password = await hashPassword(result.data?.password!);
         const signupData = {
             email: String(formData.get('email')),
             phone: String(formData.get('phone')),
-            name,
+            name: capitalizeInitialLetters(result.data?.name!),
             userType: result.data?.userType!,
             gender: result.data?.gender!,
-            password
-        }
-        
+            password: await hashPassword(result.data?.password!)
+        };
         const existingUser = await db.query.users.findFirst({
             where: (user, { eq, or }) => or(
                 eq(user.email, signupData.email),
@@ -195,64 +195,55 @@ export async function signup(_: NewSignupShape, formData: FormData) {
 
         if(existingUser)
             return {
-                success: false,
+                success: false as const,
                 errors: {
                     message: 'an account already exists for this user.'
                 }
             }
 
-        if(signupData.userType === 'user') {
-            const [newSignup] = await db.insert(schemas.users)
-                .values(signupData)
-                .returning();
-
-            const accessToken = signToken(
-                { _: newSignup.id },
-                process.env.ACCESS_TOKEN_SECRET!,
-                '30m'
-            );
-
-            return {
-                success: true,
-                data: {
-                    accessToken,
-                    email: newSignup.email,
-                    phone: newSignup.phone,
-                    name: newSignup.name,
-                    photo: newSignup.photo,
-                    role: newSignup.role
-                }
-            };
-        }
-
-        const [newSignup] = await db.insert(schemas.drivers)
+        const [newSignup] = await db.insert(schemas.users)
             .values(signupData)
             .returning();
+
+        if(newSignup.role === 'driver') {
+            await db.insert(schemas.drivers)
+                .values({ userId: newSignup.id })
+                .returning();
+        }
 
         const accessToken = signToken(
             { _: newSignup.id },
             process.env.ACCESS_TOKEN_SECRET!,
-            '30m'
+            '15m'
+        );
+        const refreshToken = signToken(
+            { _: newSignup.id },
+            process.env.REFRESH_TOKEN_SECRET!,
+            '30d'
         );
 
-        return {
-            success: true,
-            data: {
-                accessToken,
-                email: newSignup.email,
-                name: newSignup.name,
-                photo: newSignup.photo,
-                role: newSignup.role
-            }
-        };
+        cookieStore.set('x-auth-token', accessToken, {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 60 * 15
+        });
+        cookieStore.set('refT', refreshToken, {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 60 * 60 * 24 * 30
+        });
     }
     catch(err) {
         return {
-            success: false,
+            success: false as const,
             errors: {
                 message: err instanceof Error ? err.message : String(err)
             }
         }
     }
+
+    redirect('/landing');
 }
   

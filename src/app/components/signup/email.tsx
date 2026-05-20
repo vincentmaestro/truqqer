@@ -1,56 +1,95 @@
 'use client';
-import { useActionState, useState, useTransition } from 'react';
+import { useActionState, useTransition } from 'react';
 import { handleVerifyEmail } from '@/actions/signup';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 
-export default function Email({ info }: {
-    info?: string
-}) {
-    const [submitEmailResult, submitEmail] = useActionState(handleVerifyEmail, { success: false, message: '' });
-    const [loading, startTransition] = useTransition();
+export default function Email({ info }: { info?: string }) {
+  const [submitEmailResult, submitEmail] = useActionState(handleVerifyEmail, {
+    success: false,
+    message: '',
+  });
+  const [loading, startTransition] = useTransition();
 
-    async function handleEmail(e: React.FormEvent<HTMLFormElement>) {
-        e.preventDefault();
+  async function handleEmail(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
 
-        const form = new FormData(e.currentTarget);
-        const token = await grecaptcha.execute(
-            '6LfYZKUsAAAAAB_0BQnWUfHOjWBjVrOayt4aSZvP',
-            { action: 'submit' }
-        );
-        
-        startTransition(async () => {
-            form.set('token', token);
-    
-            submitEmail(form);
-        });
-    }
+    const form = new FormData(e.currentTarget);
+    const token = await grecaptcha.execute(
+      '6LfYZKUsAAAAAB_0BQnWUfHOjWBjVrOayt4aSZvP',
+      { action: 'submit' }
+    );
 
-    return(
-        <form onSubmit={handleEmail} className='bg-white px-10 py-10 rounded-lg'>
-            <p className='text-center italic font-semibold text-red-300 mb-4'>{info}</p>
-            <h1 className='font-semibold text-2xl'>Get started</h1>
-            <br />
-            <div>
-                <label>Let's start with your email</label>
-                <input
-                type="email" 
-                name="email"
-                placeholder='Enter email'
-                disabled={submitEmailResult.success ? true : false}
-                className='rounded-sm p-0.5 border border-gray-400 block outline-none mt-1'
-                />
-                <br />
-                <div className='h-6 w-full'>{ loading && <img src="/marching_ants.gif" alt="Loading..." /> }</div>
-                <p className='text-lg text-red-200'>{submitEmailResult.message}</p>
+    startTransition(async () => {
+      form.set('captcha-token', token);
+      submitEmail(form);
+    });
+  }
+
+  return (
+    <Card className="w-full max-w-md">
+      <CardHeader>
+        <CardTitle className="text-2xl">Get started</CardTitle>
+        <CardDescription>Let's start with your email</CardDescription>
+      </CardHeader>
+
+      <CardContent>
+        <form onSubmit={handleEmail} className="space-y-4">
+          {info && (
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <p className="text-sm text-destructive">{info}</p>
             </div>
-            <br />
-            <div className='flex justify-end'>
-                <button
-                className='border-none px-4 py-1 rounded-sm text-white bg-orange-300 disabled:opacity-50'
-                disabled={loading || submitEmailResult.success ? true : false}
-                >
-                    Next
-                </button>
-            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email address</Label>
+            <Input
+              id="email"
+              type="email"
+              name="email"
+              placeholder="you@example.com"
+              disabled={submitEmailResult.success || loading}
+            />
+
+            {submitEmailResult.message && (
+              <div className={
+                `p-3 rounded-lg
+                ${submitEmailResult.success ? 'bg-success/10 border border-success/20' : 'bg-destructive/10 border-destructive/20'}`
+              }>
+                <p className={`text-sm font-medium ${submitEmailResult.success ? 'text-success' : 'text-destructive'}`}>
+                  {submitEmailResult.message}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <Button
+            type="submit"
+            disabled={submitEmailResult.success || loading}
+            className="w-full"
+          >
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Sending...</span>
+              </div>
+            ) : (
+              'Continue'
+            )}
+          </Button>
         </form>
-    )
+      </CardContent>
+
+      <CardFooter className="flex justify-center">
+        <p className="text-sm text-muted-foreground">
+          Already have an account?{' '}
+          <a href="/login" className="text-primary hover:underline font-medium">
+            Sign in
+          </a>
+        </p>
+      </CardFooter>
+    </Card>
+  );
 }

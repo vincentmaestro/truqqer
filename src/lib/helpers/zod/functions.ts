@@ -21,7 +21,7 @@ export function validateObjectWithZod<Shape extends z.ZodRawShape>(
       const tree = z.treeifyError(result.error);
 
       if (!('properties' in tree) || !tree.properties) 
-        return { success: false, error: { message: 'failed to validate schema. (zod objects only)' } };
+        return { success: false, error: { message: 'failed to validate schema. (must be of object format)' } };
   
       return {
         success: false,

@@ -1,6 +1,6 @@
 import redis from '..';
 
-export async function sendOtpThrottle(phone: string) {
+export async function smsOtpThrottle(phone: string) {
     if(await redis.exists(`sms-otp:block:${phone}`))
         throw new Error('Too many attempts. Try again later.');
 
@@ -38,7 +38,7 @@ export async function confirmOtpThrottle(phone: string) {
         await redis.expire(`confirm-sms-otp:attempts:${phone}`, 600);
     }
 
-    if(confirmOtpAttempts > 10) {
+    if(confirmOtpAttempts > 5) {
         await redis.set(`confirm-sms-otp:block:${phone}`, 1, {
             expiration: { type: 'EX', value: 1800 }
         });
