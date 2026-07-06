@@ -2,7 +2,11 @@ import redis from '..';
 
 export async function smsOtpThrottle(phone: string) {
     if(await redis.exists(`sms-otp:block:${phone}`))
-        throw new Error('Too many attempts. Try again later.');
+        // throw new Error('Too many attempts. Try again later.');
+        return {
+            success: false,
+            message: 'Too many attempts. Try again later.'
+        }
 
     const otpAttempts = await redis.incr(`sms-otp:attempts:${phone}`);
 
@@ -15,7 +19,10 @@ export async function smsOtpThrottle(phone: string) {
             expiration: { type: 'EX', value: 1800 }
         });
 
-        throw new Error('Too many attempts. Try again later.');
+        return {
+            success: false,
+            message: 'Too many attempts. Try again later.'
+        }
     }
     
     const cooldownSet = await redis.set(`sms-otp:cooldown:${phone}`, 1, {
@@ -23,14 +30,19 @@ export async function smsOtpThrottle(phone: string) {
         condition: 'NX'
     });
     
-    if (!cooldownSet) {
-        throw new Error('Wait before retrying...');
-    }
+    if (!cooldownSet) 
+        return {
+            success: false,
+            message: 'Wait before retrying...'
+        }
 }
 
 export async function confirmOtpThrottle(phone: string) {
     if(await redis.exists(`confirm-sms-otp:block:${phone}`))
-        throw new Error('Too many attempts. Try again later.');
+        return {
+            success: false,
+            message: 'Too many attempts. Try again later.'
+        }
 
     const confirmOtpAttempts = await redis.incr(`confirm-sms-otp:attempts:${phone}`);
 
@@ -43,7 +55,10 @@ export async function confirmOtpThrottle(phone: string) {
             expiration: { type: 'EX', value: 1800 }
         });
 
-        throw new Error('Too many attempts. Try again later.');
+        return {
+            success: false,
+            message: 'Too many attempts. Try again later.'
+        }
     }
 
     const cooldownSet = await redis.set(`confirm-sms-otp:cooldown:${phone}`, 1, {
@@ -51,7 +66,9 @@ export async function confirmOtpThrottle(phone: string) {
         condition: 'NX'
     });
 
-    if (!cooldownSet) {
-        throw new Error('Wait before retrying...');
-    }
+    if (!cooldownSet)
+        return {
+            success: false,
+            message: 'Wait before retrying...'
+        }
 }

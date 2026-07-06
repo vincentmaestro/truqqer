@@ -1,6 +1,8 @@
 import { createClient } from "redis";
-import logger from "@/lib/utils/logger";
+import loggerFor from "@/lib/utils/logger";
+import { captureException } from '@sentry/nextjs';
 
+const logger = loggerFor('Redis service');
 const redis = 
     globalThis.redis ??
     createClient({
@@ -10,12 +12,17 @@ const redis =
 if(!globalThis.redis) {
     try{
         await redis.connect();
-        logger('redis')
-            .log('info', 'successfully connected to redis!');
+        logger.info('successfully connected to Redis.');
     }
     catch(err) {
-        logger('redis')
-            .log('error',  err instanceof Error ? err.message: String(err));
+        logger.error(err instanceof Error ? err.message: String(err), err);
+        captureException(err, {
+            tags: {
+                service: 'Redis',
+                context: 'startup/connection failed'
+            },
+            level: 'error'
+        });
 
         process.exit(1);
     }

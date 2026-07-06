@@ -20,3 +20,11 @@ export const newUserSchema = z.object({
     .regex(/[0-9]/, 'Must contain at least one number'),
 });
 
+export const newDriverSchema = z.object({
+  photo: z.url(),
+  licenseNumber: z.string().regex(/^[a-zA-Z]{3}\d{5,6}[a-zA-Z]{3}$/, 'Enter a valid licence number'),
+  licensePhoto: z.url()
+});
+
+export type NewUserSchema = z.infer<typeof newUserSchema>;
+export type NewDriverSchema = z.infer<typeof newDriverSchema>;

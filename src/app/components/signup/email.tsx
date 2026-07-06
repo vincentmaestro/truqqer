@@ -18,7 +18,7 @@ export default function Email({ info }: { info?: string }) {
 
     const form = new FormData(e.currentTarget);
     const token = await grecaptcha.execute(
-      '6LfYZKUsAAAAAB_0BQnWUfHOjWBjVrOayt4aSZvP',
+      process.env.NEXT_PUBLIC_CAPTCHA_CLIENT_KEY!,
       { action: 'submit' }
     );
 

@@ -49,6 +49,9 @@ export const drivers = drizzle.pgTable(
     {
         id: drizzle.uuid().defaultRandom().primaryKey(),
         userId: drizzle.uuid().references(() => users.id, { onDelete: 'cascade' }).notNull(),
+        photo: drizzle.text().notNull(),
+        licenseNumber: drizzle.varchar().notNull(),
+        licensePhoto: drizzle.text().notNull(),
         approved: drizzle.boolean().default(false).notNull(),
         isAvailable: drizzle.boolean().default(false).notNull(),
         rating: drizzle.numeric({ precision: 4, scale: 2 }),

@@ -1,5 +1,5 @@
 {
-  "id": "ec2a13bf-7e6f-4121-abf9-cf5a9de9f4ec",
+  "id": "dff3f776-90bb-4a3c-bd8b-a3077bb1d652",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -92,41 +92,9 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "name": {
-          "name": "name",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "email": {
-          "name": "email",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "phone": {
-          "name": "phone",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "role": {
-          "name": "role",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'driver'"
-        },
-        "gender": {
-          "name": "gender",
-          "type": "gender",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "password": {
-          "name": "password",
-          "type": "text",
+        "userId": {
+          "name": "userId",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -134,7 +102,19 @@
           "name": "photo",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
+        },
+        "licenseNumber": {
+          "name": "licenseNumber",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "licensePhoto": {
+          "name": "licensePhoto",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         },
         "approved": {
           "name": "approved",
@@ -210,24 +190,23 @@
           "with": {}
         }
       },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "drivers_email_unique": {
-          "name": "drivers_email_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
-        },
-        "drivers_phone_unique": {
-          "name": "drivers_phone_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "phone"
-          ]
+      "foreignKeys": {
+        "drivers_userId_users_id_fk": {
+          "name": "drivers_userId_users_id_fk",
+          "tableFrom": "drivers",
+          "tableTo": "users",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -266,7 +245,7 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": "'2026-05-15 11:45:25.138'"
+          "default": "'2026-06-13 23:41:37.678'"
         },
         "expiresAt": {
           "name": "expiresAt",
@@ -546,7 +525,7 @@
         },
         "year": {
           "name": "year",
-          "type": "integer",
+          "type": "varchar",
           "primaryKey": false,
           "notNull": true
         },
@@ -562,10 +541,9 @@
           "primaryKey": false,
           "notNull": false
         },
-        "truckType": {
-          "name": "truckType",
-          "type": "vehicle_type",
-          "typeSchema": "public",
+        "type": {
+          "name": "type",
+          "type": "varchar",
           "primaryKey": false,
           "notNull": true
         },
@@ -575,17 +553,11 @@
           "primaryKey": false,
           "notNull": true
         },
-        "licenceNumber": {
-          "name": "licenceNumber",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "licenseImage": {
-          "name": "licenseImage",
+        "registrationDocument": {
+          "name": "registrationDocument",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "insuranceDocument": {
           "name": "insuranceDocument",
@@ -593,9 +565,9 @@
           "primaryKey": false,
           "notNull": false
         },
-        "capacityKg": {
-          "name": "capacityKg",
-          "type": "integer",
+        "capacity": {
+          "name": "capacity",
+          "type": "varchar",
           "primaryKey": false,
           "notNull": false
         },
@@ -634,7 +606,7 @@
           "name": "truck_type_index",
           "columns": [
             {
-              "expression": "truckType",
+              "expression": "type",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -699,19 +671,6 @@
         "male",
         "female",
         "other"
-      ]
-    },
-    "public.vehicle_type": {
-      "name": "vehicle_type",
-      "schema": "public",
-      "values": [
-        "flatbed",
-        "boxed",
-        "tow van",
-        "tipper",
-        "car carrier",
-        "mini truck",
-        "tanker"
       ]
     }
   },

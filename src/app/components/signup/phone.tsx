@@ -20,7 +20,7 @@ export default function Phone({ email }: { email: string }) {
 
     const form = new FormData(e.currentTarget);
     const captchaToken = await grecaptcha.execute(
-        '6LfYZKUsAAAAAB_0BQnWUfHOjWBjVrOayt4aSZvP',
+        process.env.NEXT_PUBLIC_CAPTCHA_CLIENT_KEY!,
         { action: 'submit' }
     );
 
@@ -83,7 +83,7 @@ export default function Phone({ email }: { email: string }) {
 
     const form = new FormData(e.currentTarget);
       const captchaToken = await grecaptcha.execute(
-      '6LfYZKUsAAAAAB_0BQnWUfHOjWBjVrOayt4aSZvP',
+      process.env.NEXT_PUBLIC_CAPTCHA_CLIENT_KEY!,
       { action: 'submit' }
     );
 

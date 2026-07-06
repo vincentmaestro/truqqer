@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/helpers';
 import ContinueRegistration from '@/app/components/signup/continue-registration';
 import Email from "@/app/components/signup/email";
@@ -5,16 +6,14 @@ import Email from "@/app/components/signup/email";
 export default async function ContinueRegistrationPage({ searchParams }: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-    // const { token } = await searchParams;
+    // const cookieStore = await cookies();
+    // const token = cookieStore.get('crt');
 
     // if(!token)
     //     return <Email />
 
-    // if(Array.isArray(token))
-    //     return <Email info="The link you entered might be incorrect or broken" />
-
     // const validToken = verifyToken(
-    //     token,
+    //     token.value,
     //     process.env.PHONE_VERIFICATION_SECRET!
     // );
 

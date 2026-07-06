@@ -1,8 +1,12 @@
 import redis from '..';
 
-export async function emailVerifyThrottle(email: string) {
+export async function emailThrottle(email: string) {
     if(await redis.exists(`email-verify:block:${email}`))
-        throw new Error('Too many attempts. Try again later.');
+        // throw new Error('Too many attempts. Try again later.');
+        return {
+            success: false,
+            message: 'Too many attempts. Try again later.'
+        }
 
     const emailAttempts = await redis.incr(`email-verify:attempts:${email}`);
 
@@ -15,7 +19,11 @@ export async function emailVerifyThrottle(email: string) {
             expiration: { type: 'EX', value: 1800 }
         });
 
-        throw new Error('Too many attempts. Try again later.');
+        // throw new Error('Too many attempts. Try again later.');
+        return {
+            success: false,
+            message: 'Too many attempts. Try again later.'
+        }
     }
     
     const cooldownSet = await redis.set(`email-verify:cooldown:${email}`, 1, {
@@ -23,7 +31,10 @@ export async function emailVerifyThrottle(email: string) {
         condition: 'NX'
     });
     
-    if (!cooldownSet) {
-        throw new Error('Wait before retrying...');
-    }
+    if (!cooldownSet)
+        // throw new Error('Wait before retrying...');
+        return {
+            success: false,
+            message: 'Wait before retrying...'
+        }
 }

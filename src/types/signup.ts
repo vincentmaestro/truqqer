@@ -14,7 +14,7 @@ type NewSignupData = {
 }
 
 export type SignupErrorShape = {
-    success: false;
+    success: boolean;
     errors?: {
         [k: string]: string | undefined
     }

@@ -1,16 +1,20 @@
 'use client';
-import { useActionState, useReducer, useState, useTransition } from 'react';
+import { useActionState, useEffect, useReducer, useState, useTransition } from 'react';
 import { signup } from '@/actions/signup';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { Card, CardFooter, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { FileUpload } from '../file-upload';
 
-type InputType= {
-    type: 'name' | 'user-type' | 'gender' | 'password' | 'confirm-password',
-    value: string
+export type SignupData= {
+  type: 'name' | 'user-type' | 'gender' | 'password' | 'confirm-password'
+  | 'vehicle-make' | 'vehicle-model' | 'vehicle-year' | 'vehicle-color'
+  | 'vehicle-type' | 'vehicle-capacity' | 'vehicle-photo' | 'plate-number' 
+  | 'driver-photo' | 'driver-license-number' | 'driver-license-photo'
+  | 'vehicle-insurance-document' | 'vehicle-registration-document',
+  value: string
 }
 
 export default function ContinueRegistration({
@@ -21,354 +25,325 @@ export default function ContinueRegistration({
   phone: string;
 }) {
     const initialInputValues = {
-        name: '',
-        userType: '',
-        gender: '',
-        password: '',
-        confirmPassword: ''
+      name: '', userType: '', gender: '', password: '', confirmPassword: '',
+      vehicleMake: '', vehicleModel: '', vehicleYear: '', vehicleColor: '', vehicleType: '',
+      vehicleCapacity: '', vehiclePhoto: '', plateNumber: '', driverPhoto: '', driverLicenseNumber: '',
+      driverLicensePhoto: '', insuranceDocument: '', vehicleRegistration: ''
     };
     const [inputValue, setInputValue] = useReducer(reducer, initialInputValues);
-    const [driverSignup, setDriverSignup] = useState(false);
+    const [addDriverDetails, setAddDriverDetails] = useState(false);
     const [state, submit] = useActionState(signup, {
-        success: false as const,
-        errors: undefined
+      success: false,
+      errors: undefined
     });
     const [loading, startTransition] = useTransition();
 
-    function reducer(state: typeof initialInputValues, action: InputType) {
-        switch(action.type) {
-            case 'name': return { ...state, name: action.value };
-            case 'user-type': return { ...state, userType: action.value };
-            case 'gender': return { ...state, gender: action.value };
-            case 'password': return { ...state, password: action.value };
-            case 'confirm-password': return { ...state, confirmPassword: action.value };
+    function reducer(state: typeof initialInputValues, action: SignupData) {
+      switch(action.type) {
+        case 'name': return { ...state, name: action.value };
+        case 'user-type': return { ...state, userType: action.value };
+        case 'gender': return { ...state, gender: action.value };
+        case 'password': return { ...state, password: action.value };
+        case 'confirm-password': return { ...state, confirmPassword: action.value };
+        case 'vehicle-make': return { ...state, vehicleMake: action.value };
+        case 'vehicle-model': return { ...state, vehicleModel: action.value };
+        case 'vehicle-year': return { ...state, vehicleYear: action.value };
+        case 'vehicle-color': return { ...state, vehicleColor: action.value };
+        case 'vehicle-type': return { ...state, vehicleType: action.value };
+        case 'vehicle-capacity': return { ...state, vehicleCapacity: action.value };
+        case 'vehicle-photo': return { ...state, vehiclePhoto: action.value };
+        case 'plate-number': return { ...state, plateNumber: action.value };
+        case 'driver-photo': return { ...state, driverPhoto: action.value };
+        case 'driver-license-number': return { ...state, driverLicenseNumber: action.value };
+        case 'driver-license-photo': return { ...state, driverLicensePhoto: action.value };
+        case 'vehicle-insurance-document': return { ...state, insuranceDocument: action.value };
+        case 'vehicle-registration-document': return { ...state, vehicleRegistration: action.value };
 
-            default: return state;
-        }
+        default: return state;
+      }
     }
 
     async function handleSignup(e: React.FormEvent<HTMLFormElement>) {
-        e.preventDefault();
+      e.preventDefault();
+      const form = new FormData(e.currentTarget);
+      form.set('email', email),
+      form.set('phone', phone),
+      form.set('full-name', inputValue.name.trim());
+      form.set('user-type', inputValue.userType.trim());
+      form.set('gender', inputValue.gender.trim());
+      form.set('password', inputValue.password.trim());
+      form.set('confirm-password', inputValue.confirmPassword.trim());
 
-        const form = new FormData(e.currentTarget);
-        const token = await grecaptcha.execute(
-        '6LfYZKUsAAAAAB_0BQnWUfHOjWBjVrOayt4aSZvP',
-        { action: 'submit' }
-        );
+      if(addDriverDetails) {
+        form.set('vehicle-make', inputValue.vehicleMake.trim());
+        form.set('vehicle-model', inputValue.vehicleModel.trim());
+        form.set('vehicle-year', inputValue.vehicleYear.trim());
+        form.set('vehicle-color', inputValue.vehicleColor.trim());
+        form.set('vehicle-type', inputValue.vehicleType.trim());
+        form.set('vehicle-capacity', inputValue.vehicleCapacity.trim());
+        form.set('vehicle-photo', inputValue.vehiclePhoto);
+        form.set('plate-number', inputValue.plateNumber.trim());
+        form.set('driver-photo', inputValue.driverPhoto);
+        form.set('driver-license-number', inputValue.driverLicenseNumber.trim());
+        form.set('driver-license-photo', inputValue.driverLicensePhoto);
+        form.set('vehicle-insurance-document', inputValue.insuranceDocument);
+        form.set('vehicle-registration-document', inputValue.vehicleRegistration);
+      }
 
-        startTransition(() => {
-            form.set('captcha-token', token);
-            submit(form);
-        });
+      const token = await grecaptcha.execute(
+      process.env.NEXT_PUBLIC_CAPTCHA_CLIENT_KEY!,
+      { action: 'submit' }
+      );
+      form.set('captcha-token', token);
+
+      startTransition(() => {
+        submit(form);
+      });
     }
 
-    const TRUCK_TYPES = [
+    useEffect(() => {
+      if(state?.errors?.errorOn === 'driver-vehicle-screen')
+        setAddDriverDetails(true);
+    }, [state?.errors]);
+
+    const truckTypes = [
     'flatbed',
     'boxed',
     'tow van',
     'tipper',
     'car carrier',
     'mini truck',
+    'pickup truck',
     'tanker',
     ] as const;
 
-    const [previews, setPreviews] = useState<{
-        vehiclePhoto?: string;
-        licenseImage?: string;
-        insuranceDocument?: string;
-        registrationDocument?: string;
-    }>({});
+    if(addDriverDetails)
+      return (
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl">Driver & Vehicle Details</CardTitle>
+          <CardDescription>
+            We need a few more details to verify your driver account
+          </CardDescription>
+        </CardHeader>
 
-    function handleFilePreview(e: React.ChangeEvent<HTMLInputElement>, field: string) {
-        const file = e.target.files?.[0];
-        if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setPreviews((prev) => ({ ...prev, [field]: reader.result as string }));
-        };
-        reader.readAsDataURL(file);
-        }
-    }
+        <CardContent>
+          <form onSubmit={handleSignup} className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground">Vehicle Information</h3>
 
-    if(driverSignup)
-          return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle className="text-2xl">Driver & Vehicle Details</CardTitle>
-        <CardDescription>
-          We need a few more details to verify your driver account
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent>
-        <form action={submit} className="space-y-6">
-          {/* Hidden fields from previous step */}
-          <input type="hidden" name="email" value={email} />
-          <input type="hidden" name="phone" value={phone} />
-          {/* <input type="hidden" name="name" value={name} />
-          <input type="hidden" name="gender" value={gender} />
-          <input type="hidden" name="password" value={password} /> */}
-
-          {/* ========== VEHICLE INFO SECTION ========== */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Vehicle Information</h3>
-
-            {/* Make & Model (Side by Side) */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="make">Make</Label>
-                <Input
-                  id="make"
-                  name="make"
-                  placeholder="Toyota"
-                />
-                {state.errors?.make && (
-                  <p className="text-sm text-destructive font-medium">{state.errors.make}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="model">Model</Label>
-                <Input
-                  id="model"
-                  name="model"
-                  placeholder="Hilux"
-                />
-                {state.errors?.model && (
-                  <p className="text-sm text-destructive font-medium">{state.errors.model}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Year & Color */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="year">Year</Label>
-                <Input
-                  id="year"
-                  name="year"
-                  type="number"
-                  placeholder="2020"
-                  min="1990"
-                  max={new Date().getFullYear()}
-                />
-                {state.errors?.year && (
-                  <p className="text-sm text-destructive font-medium">{state.errors.year}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="color">Color</Label>
-                <Input
-                  id="color"
-                  name="color"
-                  placeholder="White"
-                />
-                {state.errors?.color && (
-                  <p className="text-sm text-destructive font-medium">{state.errors.color}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Truck Type */}
-            <div className="space-y-2">
-              <Label htmlFor="truck-type">Vehicle Type</Label>
-              <Select name="truck-type">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select vehicle type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TRUCK_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {state.errors?.truckType && (
-                <p className="text-sm text-destructive font-medium">{state.errors.truckType}</p>
-              )}
-            </div>
-
-            {/* Plate Number */}
-            <div className="space-y-2">
-              <Label htmlFor="plate-number">Plate Number</Label>
-              <Input
-                id="plate-number"
-                name="plate-number"
-                placeholder="ABC-123-XY"
-                className="uppercase"
-              />
-              {state.errors?.plateNumber && (
-                <p className="text-sm text-destructive font-medium">{state.errors.plateNumber}</p>
-              )}
-            </div>
-
-            {/* Capacity (Optional) */}
-            <div className="space-y-2">
-              <Label htmlFor="capacity">Capacity (kg) - Optional</Label>
-              <Input
-                id="capacity"
-                name="capacity"
-                type="number"
-                placeholder="1000"
-              />
-              {state.errors?.capacityKg && (
-                <p className="text-sm text-destructive font-medium">{state.errors.capacityKg}</p>
-              )}
-            </div>
-
-            {/* Vehicle Photo */}
-            <div className="space-y-2">
-              <Label htmlFor="vehicle-photo">Vehicle Photo</Label>
-              <Input
-                id="vehicle-photo"
-                name="vehicle-photo"
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleFilePreview(e, 'vehiclePhoto')}
-              />
-              {previews.vehiclePhoto && (
-                <div className="mt-2 rounded-lg border overflow-hidden">
-                  <img
-                    src={previews.vehiclePhoto}
-                    alt="Vehicle preview"
-                    className="w-full h-32 object-cover"
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="make">Make</Label>
+                  <Input
+                    id="make"
+                    name="make"
+                    value={inputValue.vehicleMake}
+                    onChange={e => setInputValue({ type: 'vehicle-make', value: e.target.value })}
                   />
+                  {state.errors?.make && (
+                    <p className="text-sm text-destructive font-medium">{state.errors.make}</p>
+                  )}
                 </div>
-              )}
-              {state.errors?.photo && (
-                <p className="text-sm text-destructive font-medium">{state.errors.photo}</p>
-              )}
-            </div>
-          </div>
 
-          {/* ========== DRIVER LICENSE SECTION ========== */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Driver's License</h3>
-
-            {/* License Number */}
-            <div className="space-y-2">
-              <Label htmlFor="license-number">License Number</Label>
-              <Input
-                id="license-number"
-                name="license-number"
-                placeholder="ABC12345678"
-                className="uppercase"
-              />
-              {state.errors?.licenceNumber && (
-                <p className="text-sm text-destructive font-medium">
-                  {state.errors.licenceNumber}
-                </p>
-              )}
-            </div>
-
-            {/* License Image */}
-            <div className="space-y-2">
-              <Label htmlFor="license-image">License Photo</Label>
-              <Input
-                id="license-image"
-                name="license-image"
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleFilePreview(e, 'licenseImage')}
-              />
-              {previews.licenseImage && (
-                <div className="mt-2 rounded-lg border overflow-hidden">
-                  <img
-                    src={previews.licenseImage}
-                    alt="License preview"
-                    className="w-full h-32 object-cover"
+                <div className="space-y-2">
+                  <Label htmlFor="model">Model</Label>
+                  <Input
+                    id="model"
+                    name="model"
+                    value={inputValue.vehicleModel}
+                    onChange={e => setInputValue({ type: 'vehicle-model', value: e.target.value })}
                   />
+                  {state.errors?.model && (
+                    <p className="text-sm text-destructive font-medium">{state.errors.model}</p>
+                  )}
                 </div>
-              )}
-              {state.errors?.licenseImage && (
-                <p className="text-sm text-destructive font-medium">
-                  {state.errors.licenseImage}
-                </p>
-              )}
-            </div>
-          </div>
+              </div>
 
-          {/* ========== DOCUMENTS SECTION ========== */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Vehicle Documents</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="year">Year</Label>
+                  <Input
+                    id="year"
+                    name="year"
+                    type="number"
+                    min="1990"
+                    max={new Date().getFullYear()}
+                    value={inputValue.vehicleYear}
+                    onChange={e => setInputValue({ type: 'vehicle-year', value: e.target.value })}
+                  />
+                  {state.errors?.year && (
+                    <p className="text-sm text-destructive font-medium">{state.errors.year}</p>
+                  )}
+                </div>
 
-            {/* Insurance Document (Optional) */}
-            <div className="space-y-2">
-              <Label htmlFor="insurance-document">
-                Insurance Document <span className="text-muted-foreground">(Optional)</span>
-              </Label>
-              <Input
-                id="insurance-document"
-                name="insurance-document"
-                type="file"
-                accept="image/*,application/pdf"
-                onChange={(e) => handleFilePreview(e, 'insuranceDocument')}
+                <div className="space-y-2">
+                  <Label htmlFor="color">Color</Label>
+                  <Input
+                    id="color"
+                    name="color"
+                    value={inputValue.vehicleColor}
+                    onChange={e => setInputValue({ type: 'vehicle-color', value: e.target.value })}
+                  />
+                  {state.errors?.color && (
+                    <p className="text-sm text-destructive font-medium">{state.errors.color}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="truck-type">Vehicle Type</Label>
+                <Select name="truck-type" onValueChange={value => setInputValue({ type: 'vehicle-type', value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {truckTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {state.errors?.type && (
+                  <p className="text-sm text-destructive font-medium">{state.errors.truckType}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="plate-number">License plate/Plate number</Label>
+                <Input
+                  id="plate-number"
+                  name="plate-number"
+                  className="uppercase"
+                  value={inputValue.plateNumber}
+                  onChange={e => setInputValue({ type: 'plate-number', value: e.target.value })}
+                />
+                {state.errors?.plateNumber && (
+                  <p className="text-sm text-destructive font-medium">{state.errors.plateNumber}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="capacity">Vehicle capacity (Kg or Litres) - Optional</Label>
+                <Input
+                  id="capacity"
+                  name="capacity"
+                  value={inputValue.vehicleCapacity}
+                  onChange={e => setInputValue({ type: 'vehicle-capacity', value: e.target.value })}
+                />
+                {state.errors?.capacity && (
+                  <p className="text-sm text-destructive font-medium">{state.errors.capacity}</p>
+                )}
+              </div>
+
+              <FileUpload
+              label='Vehicle photo'
+              name='vehicle-photo'
+              accept='image/*'
+              required
+              folder='vehicle-photos'
+              setInputValue={setInputValue}
               />
-              {previews.insuranceDocument && (
-                <div className="mt-2 p-3 rounded-lg border bg-muted">
-                  <p className="text-sm text-muted-foreground">✓ Document uploaded</p>
-                </div>
-              )}
-              {state.errors?.insuranceDocument && (
-                <p className="text-sm text-destructive font-medium">
-                  {state.errors.insuranceDocument}
-                </p>
-              )}
             </div>
 
-            {/* Registration Document (NEW - RECOMMENDED) */}
-            <div className="space-y-2">
-              <Label htmlFor="registration-document">
-                Vehicle Registration <span className="text-muted-foreground">(Optional)</span>
-              </Label>
-              <Input
-                id="registration-document"
-                name="registration-document"
-                type="file"
-                accept="image/*,application/pdf"
-                onChange={(e) => handleFilePreview(e, 'registrationDocument')}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground">Driver's Information</h3>
+
+              <div className="space-y-2">
+                <Label htmlFor="driver-license-number">License Number</Label>
+                <Input
+                  id="driver-license-number"
+                  name="driver-license-number"
+                  className="uppercase"
+                  value={inputValue.driverLicenseNumber}
+                  onChange={e => setInputValue({ type: 'driver-license-number', value: e.target.value })}
+                />
+                {state.errors?.licenseNumber && (
+                  <p className="text-sm text-destructive font-medium">
+                    {state.errors.licenseNumber}
+                  </p>
+                )}
+              </div>
+
+              <FileUpload
+              label='Driver license photo'
+              name='driver-license-photo'
+              accept='image/*'
+              required
+              folder='driver-license-photos'
+              setInputValue={setInputValue}
               />
-              {previews.registrationDocument && (
-                <div className="mt-2 p-3 rounded-lg border bg-muted">
-                  <p className="text-sm text-muted-foreground">✓ Document uploaded</p>
-                </div>
-              )}
+
+              <FileUpload
+              label='Driver photo/portrait'
+              name='driver-photo'
+              accept='image/*'
+              required
+              folder='driver-photos'
+              setInputValue={setInputValue}
+              />
             </div>
-          </div>
 
-          {/* Info Banner */}
-          <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
-            <p className="text-sm text-primary">
-              ℹ️ Your account will be reviewed by our team. You'll receive a notification once
-              approved (usually within 24-48 hours).
-            </p>
-          </div>
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground">Vehicle Documents</h3>
 
-          {/* General Error Message */}
-          {state.errors?.message && (
-            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-              <p className="text-sm text-destructive font-medium">{state.errors.message}</p>
+              <FileUpload
+              label='Vehicle insurance document'
+              name='vehicle-insurance-document'
+              accept='application/pdf'
+              required
+              folder='vehicle-insurance-docs'
+              setInputValue={setInputValue}
+              />
+
+              <FileUpload
+                label='Vehicle registration document'
+                name='vehicle-registration-document'
+                accept='application/pdf'
+                required
+                folder='vehicle-registration-docs'
+                setInputValue={setInputValue}
+                />
             </div>
-          )}
 
-          {/* Submit Button */}
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Submitting application...
-              </span>
-            ) : (
-              'Submit Driver Application'
+            <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+              <p className="text-sm text-primary">
+                ℹ️ Your account will be reviewed by our team. You'll receive a notification once
+                approved (usually within 24-48 hours).
+              </p>
+            </div>
+
+            {state.errors?.message && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                <p className="text-sm text-destructive font-medium">{state.errors.message}</p>
+              </div>
             )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-  );
-  
+
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Submitting application...
+                </span>
+              ) : (
+                'Submit Driver Application'
+              )}
+            </Button>
+          </form>
+        </CardContent>
+
+        <CardFooter className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => setAddDriverDetails(false)}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Back one step
+          </button>
+        </CardFooter>
+      </Card>
+    );
 
   return (
     <Card className="w-full max-w-md">
@@ -383,9 +358,6 @@ export default function ContinueRegistration({
             <p className="text-sm border-success/20 bg-success/10 text-success p-2.5 rounded-md">{email}</p>
             <p className="text-sm border-success/20 bg-success/10 text-success p-2.5 rounded-md">{phone}</p>
           </div>
-          
-          <input type="hidden" name="email" value={email} />
-          <input type="hidden" name="phone" value={phone} />
 
           <div className="space-y-2">
             <Label htmlFor="full-name">Full name</Label>
@@ -422,7 +394,7 @@ export default function ContinueRegistration({
             <Label htmlFor="gender">Gender</Label>
             <Select name="gender" onValueChange={value => setInputValue({ type: 'gender', value })}>
               <SelectTrigger>
-                <SelectValue placeholder="Select" />
+                <SelectValue placeholder="Select an option" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="male">Male</SelectItem>
@@ -441,7 +413,6 @@ export default function ContinueRegistration({
                 id="password"
                 type="password"
                 name="password"
-                placeholder="••••••••"
                 value={inputValue.password}
                 onChange={e => setInputValue({ type: 'password', value: e.target.value })}
             />
@@ -458,7 +429,6 @@ export default function ContinueRegistration({
               id="confirm-password"
               type="password"
               name="confirm-password"
-              placeholder="••••••••"
               value={inputValue.confirmPassword}
               onChange={e => setInputValue({ type: 'confirm-password', value: e.target.value })}
             />
@@ -473,7 +443,7 @@ export default function ContinueRegistration({
           </div>
 
           {inputValue.userType === 'driver' ? (
-            <Button onClick={() => setDriverSignup(true)} className="w-full">
+            <Button onClick={() => setAddDriverDetails(true)} className="w-full">
               Next
             </Button>
           ) : 
