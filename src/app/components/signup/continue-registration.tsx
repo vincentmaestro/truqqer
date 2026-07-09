@@ -107,13 +107,14 @@ export default function ContinueRegistration({
     }, [state?.errors]);
 
     const truckTypes = [
-    'flatbed',
     'boxed',
+    'car carrier',
+    'crane',
+    'flatbed',
+    'pickup truck',
     'tow van',
     'tipper',
-    'car carrier',
     'mini truck',
-    'pickup truck',
     'tanker',
     ] as const;
 
@@ -123,7 +124,7 @@ export default function ContinueRegistration({
         <CardHeader>
           <CardTitle className="text-2xl">Driver & Vehicle Details</CardTitle>
           <CardDescription>
-            We need a few more details to verify your driver account
+            We need a few more details to create your driver account
           </CardDescription>
         </CardHeader>
 
@@ -193,7 +194,11 @@ export default function ContinueRegistration({
 
               <div className="space-y-2">
                 <Label htmlFor="truck-type">Vehicle Type</Label>
-                <Select name="truck-type" onValueChange={value => setInputValue({ type: 'vehicle-type', value })}>
+                <Select
+                name="vehicle-type"
+                value={inputValue.vehicleType}
+                onValueChange={value => setInputValue({ type: 'vehicle-type', value })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select an option" />
                   </SelectTrigger>
@@ -374,7 +379,11 @@ export default function ContinueRegistration({
 
           <div className="space-y-2">
             <Label htmlFor="user-type">I want to</Label>
-            <Select name="user-type" onValueChange={value => setInputValue({ type: 'user-type', value })}>
+            <Select
+            name="user-type"
+            value={inputValue.userType}
+            onValueChange={value => setInputValue({ type: 'user-type', value })}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select an option" />
               </SelectTrigger>
@@ -392,7 +401,11 @@ export default function ContinueRegistration({
 
           <div className="space-y-2">
             <Label htmlFor="gender">Gender</Label>
-            <Select name="gender" onValueChange={value => setInputValue({ type: 'gender', value })}>
+            <Select
+            name="gender"
+            value={inputValue.gender}
+            onValueChange={value => setInputValue({ type: 'gender', value })}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select an option" />
               </SelectTrigger>

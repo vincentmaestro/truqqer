@@ -1,6 +1,7 @@
 import z from 'zod';
 
 const truckTypes = [
+    'crane',
     'flatbed',
     'boxed',
     'tow van',

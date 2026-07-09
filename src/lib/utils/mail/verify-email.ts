@@ -15,7 +15,7 @@ export async function sendEmailVerificationLink(recipient: string, token: string
     const message = {
         from: `Truqqer Co <${process.env.SMTP_AUTH!}>`,
         to: recipient,
-        subject: 'Confirm Your Email Address',
+        subject: 'Verify Your Email Address',
         html: `
             <!DOCTYPE html>
             <html lang="en">
@@ -24,10 +24,10 @@ export async function sendEmailVerificationLink(recipient: string, token: string
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <link rel="preconnect" href="https://fonts.googleapis.com">
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-                <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
-                <title>Confirm Email Address</title>
+                <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
+                <title>Verify Your Email</title>
                 <style>
-                    *{
+                    * {
                         margin: 0;
                         padding: 0;
                         box-sizing: border-box;
@@ -37,16 +37,17 @@ export async function sendEmailVerificationLink(recipient: string, token: string
                         text-decoration: none;
                     }
                 
-                        body {
+                    body {
                         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                         width: 75%;
                         margin: 0 auto;
                     }
 
                     .img-container {
-                        background-color: #c0c0c0;
+                        background-color: #f3f4f6;
                         margin: 2% 0;
-                        padding: 1% 0;
+                        padding: 1.5% 0;
+                        border-radius: 8px;
                     }
 
                     .img-box {
@@ -60,60 +61,115 @@ export async function sendEmailVerificationLink(recipient: string, token: string
                     }
 
                     .greetings {
-                        margin-bottom: 2%;
+                        margin: 2% 0 1%;
                     }
 
                     .greetings h3 {
                         display: flex;
-                        column-gap: 4px;
-                        /* align-items: center; */
+                        column-gap: 6px;
+                        align-items: center;
                         font-size: 1.3rem;
-                        font-weight: lighter;
+                        font-weight: 500;
+                        color: #0f172a;
                     }
 
                     .content p {
-                        font-size: 1.1rem;
-                        margin-bottom: 2px;
+                        font-size: 1.05rem;
+                        margin-bottom: 1rem;
                         font-family: "poppins";
                         font-weight: 300;
+                        line-height: 1.6;
+                        color: #334155;
                     }
 
-                    .content p:first-child {
-                        font-size: 1.3rem;
+                    .content p:first-of-type {
+                        font-size: 1.15rem;
+                        color: #0f172a;
+                        margin-bottom: 0.5rem;
                     }
 
-                    .content .proceed {
+                    .verify-section {
+                        background-color: #f0fdf4;
+                        border-left: 4px solid #16a34a;
+                        padding: 1.5rem;
+                        margin: 2rem 0;
+                        border-radius: 4px;
+                    }
+
+                    .verify-section p {
+                        font-size: 1rem;
+                        color: #166534;
+                        margin-bottom: 1rem;
+                    }
+
+                    .continue-button {
                         display: inline-block;
-                        background-color: #c0c0c0;
+                        background-color: #f97316;
                         color: #fff;
-                        font-size: 1.2rem;
+                        font-size: 1rem;
                         border-radius: 6px;
-                        padding: 4px 12px;
-                        margin-top: .2%;
+                        padding: 12px 28px;
+                        font-weight: 500;
+                        transition: opacity 0.3s ease;
                     }
-                                
-                    .content .contact:hover {
+
+                    .continue-button:hover {
+                        opacity: 0.9;
+                    }
+
+                    .security-notice {
+                        background-color: #fef3f2;
+                        border-left: 4px solid #ef4444;
+                        padding: 1rem;
+                        margin: 2rem 0 1rem 0;
+                        border-radius: 4px;
+                    }
+
+                    .security-notice p {
+                        font-size: 0.95rem;
+                        color: #7f1d1d;
+                        line-height: 1.5;
+                    }
+
+                    .contact {
+                        color: #f97316;
+                        font-weight: 500;
+                    }
+
+                    .contact:hover {
                         text-decoration: underline;
                     }
-                            
-                    .content .contact {
-                        font-size: 15px;
+
+                    .main footer {
+                        margin-top: 2rem;
+                        padding-top: 1.5rem;
+                        border-top: 1px solid #e2e8f0;
                     }
 
                     .main footer small {
-                        font-size: 1rem;
+                        font-size: 0.9rem;
+                        color: #64748b;
                     }
 
                     .main footer p {
-                        font-size: 1.3rem;
+                        font-size: 1.1rem;
+                        margin-top: 0.5rem;
+                        color: #0f172a;
+                        font-weight: 500;
+                    }
+
+                    .address {
+                        margin-top: 1.5rem;
+                        padding-top: 1rem;
                     }
 
                     .address small {
                         display: block;
-                        font-size: .9rem;
+                        font-size: 0.85rem;
                         font-family: "poppins";
                         font-style: italic;
                         font-weight: 300;
+                        color: #94a3b8;
                     }
 
                     @media screen and (max-width: 1024px) {
@@ -170,22 +226,33 @@ export async function sendEmailVerificationLink(recipient: string, token: string
                 </div>
                 <div class="main">
                     <div class="greetings">
-                        <h3>Hello there <span><img src="https://fonts.gstatic.com/s/e/notoemoji/16.0/1f44b/32.png" alt="wave"></span></h3>
+                        <h3>Welcome to Truqqer <span><img src="https://fonts.gstatic.com/s/e/notoemoji/16.0/1f44b/32.png" alt="wave" style="width: 24px; height: 24px;"></span></h3>
                     </div>
-                        <p>We are glad to have you on board.</p>
-                        <p>You have received this mail to verify your email address (${recipient}) to enable you proceed to enjoy our services.</p>
-                        <br>
-                        <p>Follow the link below to continue registration</p>
-                        <a class="proceed" href="http://localhost:3000/signup?tab=phone&token=${token}">Continue Registration</a>
-                        <br>
-                        <br>
-                        <p>Reachout to us for any issues or enquiries at</p>
+                    
+                    <div class="content">
+                        <p>Glad to have you join us!</p>
+                        
+                        <p>To get started, we need to verify your email address. This helps us keep your account secure and ensures you receive important updates.</p>
+
+                        <div class="verify-section">
+                            <p><strong>Click the button below to verify your email and continue your registration:</strong></p>
+                            <a class="continue-button" href="http://localhost:3000/signup?tab=phone&token=${token}">Verify Email Address</a>
+                        </div>
+
+                        <p>This link will expire in 1 hour, so please verify your email soon.</p>
+
+                        <p>If you have any questions, we're here to help:</p>
                         <a class="contact" href="mailto:hello@truqqer.com">hello@truqqer.com</a>
+
+                        <div class="security-notice">
+                            <p><strong>⚠️ Security Notice:</strong> If this was not you, kindly ignore this email.</p>
+                        </div>
+                        
                         <br>
-                        <br>
+                        
                         <footer>
-                            <small>Sincerely,</small>
-                            <p>Truqqer Co</p>
+                            <small>Best regards,</small>
+                            <p>The Truqqer Team</p>
                         </footer>
                     </div>
 
@@ -202,7 +269,7 @@ export async function sendEmailVerificationLink(recipient: string, token: string
     const info = await transporter.sendMail(message);
             
     if(!info.response.includes('250 OK'))
-        throw new Error('Failed to send. Please try again.');
+        throw new Error('Failed to send email. Please try again.');
 }
 
 
@@ -210,7 +277,7 @@ export async function sendExistingUserSignupNotification(recipient: string) {
     const message = {
         from: `Truqqer Co <${process.env.SMTP_AUTH!}>`,
         to: recipient,
-        subject: 'Welcome back to Truqqer!',
+        subject: 'Did you mean to sign in?',
         html: `
             <!DOCTYPE html>
             <html lang="en">
@@ -326,6 +393,20 @@ export async function sendExistingUserSignupNotification(recipient: string) {
                         color: #166534;
                     }
 
+                    .security-notice {
+                        background-color: #fef3f2;
+                        border-left: 4px solid #ef4444;
+                        padding: 1rem;
+                        margin: 2rem 0 1rem 0;
+                        border-radius: 4px;
+                    }
+
+                    .security-notice p {
+                        font-size: 0.95rem;
+                        color: #7f1d1d;
+                        line-height: 1.5;
+                    }
+
                     .contact {
                         color: #f97316;
                         font-size: 15px;
@@ -428,10 +509,10 @@ export async function sendExistingUserSignupNotification(recipient: string) {
                     <div class="greetings">
                         <h3>Welcome back <span><img src="https://fonts.gstatic.com/s/e/notoemoji/16.0/1f44b/32.png" alt="wave"></span></h3>
                         <p>Did you mean to sign in?</p>
-                        </div>
+                    </div>
                     
                     <div class="content">
-                        <p>It looks like this email address is already associated with a Truqqer account.</p>
+                        <p>A recent action saw you signing up for an account with this email.</p>
                         
                         <p>If this is you, simply sign in to your existing account. If you forgot your password, we can help you reset it.</p>
 
@@ -448,8 +529,12 @@ export async function sendExistingUserSignupNotification(recipient: string) {
 
                         <p>If you have any questions or need assistance, feel free to reach out to us:</p>
                         <a class="contact" href="mailto:hello@truqqer.com">hello@truqqer.com</a>
+
+                        <div class="security-notice">
+                            <p><strong>⚠️ Security Notice:</strong> If you did not initiate this request, kindly ignore this email. Your account remains secure.</p>
+                        </div>
                         
-                        <br><br>
+                        <br>
                         
                         <footer>
                             <small>Best regards,</small>

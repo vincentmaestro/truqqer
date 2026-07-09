@@ -100,6 +100,16 @@ export async function handleVerifyPhone(_: ActionResult<string>, formData: FormD
             `+234${phone.substring(1)}` :
             `+234${phone}`;
 
+        const existingUser = await db.query.users.findFirst({
+            where: (user, { eq }) => eq(user.phone, phoneIntlFormat)
+        });
+
+        if(existingUser)
+            return {
+                success: true,
+                message: 'You will receive a verification code if no account was found associated with this number.'
+            }
+
         await sendSMSVerificationCode(phoneIntlFormat);
         logger.info('Sent an OTP to ' + phoneIntlFormat);
 
@@ -174,7 +184,7 @@ export async function handleConfirmationCode(_: ActionResult<null>, formData: Fo
             httpOnly: true,
             sameSite: 'lax',
             secure: process.env.NODE_ENV === 'production',
-            maxAge: 60 * 60
+            maxAge: 60 * 60 * 24 * 7
         });
 
         continueRegistration = true;
