@@ -4,8 +4,8 @@ import { captcha } from "@/lib/utils/captcha";
 import { captureException } from '@sentry/nextjs';
 import loggerFor from "@/lib/utils/logger";
 import { ActionResult, SignupErrorShape } from "@/types/signup";
-import { sendEmailVerificationLink, sendExistingUserSignupNotification } from "@/lib/utils/mail/verify-email";
-import { sendSMSVerificationCode } from "@/lib/utils/sms/verify-phone";
+import { sendEmailVerificationLink, sendExistingUserSignupNotification } from "@/lib/services/mail/verify-email";
+import { sendSMSVerificationCode } from "@/lib/services/sms/verify-phone";
 import { capitalizeInitialLetters, hashPassword, signToken, verifyToken } from "@/lib/helpers";
 import { newUserSchema, newDriverSchema, NewDriverSchema } from "@/lib/helpers/zod/user-and-driver";
 import { newVehicleSchema, NewVehicleSchema } from "@/lib/helpers/zod/vehicle";
@@ -26,6 +26,9 @@ export async function handleVerifyEmail(_: ActionResult<null>, formData: FormDat
         const captchaError =  await captcha(captchaToken);
         if(captchaError) return captchaError;
 
+        const emailThrottleError = await emailThrottle(email);
+        if(emailThrottleError) return emailThrottleError;
+
         const ipThrottleError = await ipThrottle();
         if(ipThrottleError) return ipThrottleError;
 
@@ -36,9 +39,6 @@ export async function handleVerifyEmail(_: ActionResult<null>, formData: FormDat
                 success: false,
                 message: 'Invalid email address'
             }
-
-        const emailThrottleError = await emailThrottle(email);
-        if(emailThrottleError) return emailThrottleError;
 
         const existingUser = await db.query.users.findFirst({
             where: (user, { eq }) => eq(user.email, isValidEmail.data)
@@ -355,29 +355,29 @@ export async function signup(_: SignupErrorShape, formData: FormData) {
             return newUser;
         });
 
-        const accessToken = signToken(
-            { _: result.id },
-            process.env.ACCESS_TOKEN_SECRET!,
-            '15m'
-        );
-        const refreshToken = signToken(
-            { _: result.id },
-            process.env.REFRESH_TOKEN_SECRET!,
-            '30d'
-        );
+        // const accessToken = signToken(
+        //     { _: result.id },
+        //     process.env.ACCESS_TOKEN_SECRET!,
+        //     '15m'
+        // );
+        // const refreshToken = signToken(
+        //     { _: result.id },
+        //     process.env.REFRESH_TOKEN_SECRET!,
+        //     '30d'
+        // );
 
-        cookieStore.set('x-auth-token', accessToken, {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 60 * 15
-        });
-        cookieStore.set('refT', refreshToken, {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 60 * 60 * 24 * 30
-        });
+        // cookieStore.set('x-auth-token', accessToken, {
+        //     httpOnly: true,
+        //     sameSite: 'lax',
+        //     secure: process.env.NODE_ENV === 'production',
+        //     maxAge: 60 * 15
+        // });
+        // cookieStore.set('refT', refreshToken, {
+        //     httpOnly: true,
+        //     sameSite: 'lax',
+        //     secure: process.env.NODE_ENV === 'production',
+        //     maxAge: 60 * 60 * 24 * 30
+        // });
     }
     catch(err) {
         logger.error('Error encountered during account creation', err);

@@ -1,5 +1,5 @@
-import ContinueRegistration from '@/app/components/signup/continue-registration';
-import Email from "@/app/components/signup/email";
+import ContinueRegistration from '@/app/components/auth/continue-registration';
+import Email from "@/app/components/auth/email";
 import { verifyToken } from '@/lib/helpers';
 import { cookies } from 'next/headers';
 

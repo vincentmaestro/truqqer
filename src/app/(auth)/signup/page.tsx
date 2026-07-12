@@ -1,8 +1,8 @@
 import { verifyToken } from "@/lib/helpers";
 import { JwtPayload } from 'jsonwebtoken';
 import { validateEmail } from '@/lib/helpers/zod/functions';
-import Email from "@/app/components/signup/email";
-import Phone from "@/app/components/signup/phone";
+import Email from "@/app/components/auth/email";
+import Phone from "@/app/components/auth/phone";
 
 export default async function ContinueRegistrationPage({ searchParams }: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>

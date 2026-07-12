@@ -1,12 +1,13 @@
 'use client';
 import { useActionState, useEffect, useReducer, useState, useTransition } from 'react';
 import { signup } from '@/actions/signup';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardFooter, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Button } from '@/app/components/ui/button';
+import { Input } from '@/app/components/ui/input';
+import { Label } from '@/app/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
+import { Card, CardFooter, CardHeader, CardTitle, CardDescription, CardContent } from '@/app/components/ui/card';
 import { FileUpload } from '../file-upload';
+import { ArrowLeft } from 'lucide-react';
 
 export type SignupData= {
   type: 'name' | 'user-type' | 'gender' | 'password' | 'confirm-password'
@@ -17,10 +18,7 @@ export type SignupData= {
   value: string
 }
 
-export default function ContinueRegistration({
-  email,
-  phone,
-}: {
+export default function ContinueRegistration({ email, phone, }: {
   email: string;
   phone: string;
 }) {
@@ -31,7 +29,7 @@ export default function ContinueRegistration({
       driverLicensePhoto: '', insuranceDocument: '', vehicleRegistration: ''
     };
     const [inputValue, setInputValue] = useReducer(reducer, initialInputValues);
-    const [addDriverDetails, setAddDriverDetails] = useState(false);
+    const [showDriverVehicleScreen, setShowDriverVehicleScreen] = useState(false);
     const [state, submit] = useActionState(signup, {
       success: false,
       errors: undefined
@@ -74,7 +72,7 @@ export default function ContinueRegistration({
       form.set('password', inputValue.password.trim());
       form.set('confirm-password', inputValue.confirmPassword.trim());
 
-      if(addDriverDetails) {
+      if(showDriverVehicleScreen) {
         form.set('vehicle-make', inputValue.vehicleMake.trim());
         form.set('vehicle-model', inputValue.vehicleModel.trim());
         form.set('vehicle-year', inputValue.vehicleYear.trim());
@@ -103,7 +101,7 @@ export default function ContinueRegistration({
 
     useEffect(() => {
       if(state?.errors?.errorOn === 'driver-vehicle-screen')
-        setAddDriverDetails(true);
+        setShowDriverVehicleScreen(true);
     }, [state?.errors]);
 
     const truckTypes = [
@@ -118,10 +116,18 @@ export default function ContinueRegistration({
     'tanker',
     ] as const;
 
-    if(addDriverDetails)
+    if(showDriverVehicleScreen)
       return (
       <Card className="w-full max-w-md">
         <CardHeader>
+          <button
+            type="button"
+            onClick={() => setShowDriverVehicleScreen(false)}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-4"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm font-medium">Back</span>
+          </button>
           <CardTitle className="text-2xl">Driver & Vehicle Details</CardTitle>
           <CardDescription>
             We need a few more details to create your driver account
@@ -312,6 +318,12 @@ export default function ContinueRegistration({
                 />
             </div>
 
+            {state.errors?.message && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                <p className="text-sm text-destructive font-medium">{state.errors.message}</p>
+              </div>
+            )}
+
             <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
               <p className="text-sm text-primary">
                 ℹ️ Your account will be reviewed by our team. You'll receive a notification once
@@ -319,11 +331,27 @@ export default function ContinueRegistration({
               </p>
             </div>
 
-            {state.errors?.message && (
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                <p className="text-sm text-destructive font-medium">{state.errors.message}</p>
-              </div>
-            )}
+            <p className="text-xs text-muted-foreground text-center">
+              By signing up, you agree to our{' '}
+              <a 
+                href="/terms-of-service" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline font-medium"
+              >
+                Terms of Service
+              </a>
+              {' '}and{' '}
+              <a 
+                href="/privacy-policy" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline font-medium"
+              >
+                Privacy Policy
+              </a>
+              .
+            </p>
 
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? (
@@ -341,7 +369,7 @@ export default function ContinueRegistration({
         <CardFooter className="flex justify-center">
           <button
             type="button"
-            onClick={() => setAddDriverDetails(false)}
+            onClick={() => setShowDriverVehicleScreen(false)}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Back one step
@@ -455,8 +483,32 @@ export default function ContinueRegistration({
             )}
           </div>
 
+          {inputValue.userType !== 'driver' &&
+            <p className="text-xs text-muted-foreground text-center">
+              By signing up, you agree to our{' '}
+              <a 
+                href="/terms-of-service" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline font-medium"
+              >
+                Terms of Service
+              </a>
+              {' '}and{' '}
+              <a 
+                href="/privacy-policy" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline font-medium"
+              >
+                Privacy Policy
+              </a>
+              .
+            </p>
+          }
+
           {inputValue.userType === 'driver' ? (
-            <Button onClick={() => setAddDriverDetails(true)} className="w-full">
+            <Button onClick={() => setShowDriverVehicleScreen(true)} className="w-full">
               Next
             </Button>
           ) : 
