@@ -7,7 +7,8 @@ import { Label } from '@/app/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Card, CardFooter, CardHeader, CardTitle, CardDescription, CardContent } from '@/app/components/ui/card';
 import { FileUpload } from '../file-upload';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Info } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export type SignupData= {
   type: 'name' | 'user-type' | 'gender' | 'password' | 'confirm-password'
@@ -32,9 +33,11 @@ export default function ContinueRegistration({ email, phone, }: {
     const [showDriverVehicleScreen, setShowDriverVehicleScreen] = useState(false);
     const [state, submit] = useActionState(signup, {
       success: false,
-      errors: undefined
+      errors: undefined,
+      // data: undefined
     });
     const [loading, startTransition] = useTransition();
+    const router = useRouter();
 
     function reducer(state: typeof initialInputValues, action: SignupData) {
       switch(action.type) {
@@ -100,9 +103,19 @@ export default function ContinueRegistration({ email, phone, }: {
     }
 
     useEffect(() => {
-      if(state?.errors?.errorOn === 'driver-vehicle-screen')
+      if(state.errors?.errorOn === 'driver-vehicle-screen')
         setShowDriverVehicleScreen(true);
-    }, [state?.errors]);
+    }, [state.errors, router]);
+
+    useEffect(() => {
+      const token = state.data?.token;
+
+      state.data?.role === 'driver'
+      ? router.replace(`/signup/pending-approval?token=${token}`)
+      : state.data?.role === 'user'
+      ? router.replace(`/explore`)
+      : null;
+    }, [state.success, router]);
 
     const truckTypes = [
     'boxed',
@@ -325,9 +338,11 @@ export default function ContinueRegistration({ email, phone, }: {
             )}
 
             <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
-              <p className="text-sm text-primary">
-                ℹ️ Your account will be reviewed by our team. You'll receive a notification once
-                approved (usually within 24-48 hours).
+              <p className="text-sm text-primary flex gap-x-3">
+                <Info size={50} />
+                <span>
+                  Your account will be reviewed by our team. You'll receive a notification once approved (usually within 24-48 hours).
+                </span>
               </p>
             </div>
 

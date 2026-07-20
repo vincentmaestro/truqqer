@@ -3,7 +3,7 @@ import { validateEmail, validateObjectWithZod } from "@/lib/helpers/zod/function
 import { captcha } from "@/lib/utils/captcha";
 import { captureException } from '@sentry/nextjs';
 import loggerFor from "@/lib/utils/logger";
-import { ActionResult, SignupErrorShape } from "@/types/signup";
+import { ActionResult, SignupResponse } from "@/types/signup";
 import { sendEmailVerificationLink, sendExistingUserSignupNotification } from "@/lib/services/mail/verify-email";
 import { sendSMSVerificationCode } from "@/lib/services/sms/verify-phone";
 import { capitalizeInitialLetters, hashPassword, signToken, verifyToken } from "@/lib/helpers";
@@ -62,7 +62,7 @@ export async function handleVerifyEmail(_: ActionResult<null>, formData: FormDat
     }
     catch(err) {
         logger.error('Error encountered in email verification pipeline', err);
-        process.env.NODE_ENV === 'production' && captureException(err, {
+        captureException(err, {
             tags: {
               endpoint: 'Email verification service',
               note: 'Error encountered in email verification pipeline' 
@@ -127,7 +127,7 @@ export async function handleVerifyPhone(_: ActionResult<string>, formData: FormD
     }
     catch(err) {
         logger.error('Error encountered trying to send OTP via SMS', err);
-        process.env.NODE_ENV === 'production' && captureException(err, {
+        captureException(err, {
             tags: {
               endpoint: 'OTP sending service',
               note: 'Error encountered in SMS sending pipeline' 
@@ -191,13 +191,13 @@ export async function handleConfirmationCode(_: ActionResult<null>, formData: Fo
     }
     catch(err) {
         logger.error('Error encountered while verifying the OTP', err);
-        process.env.NODE_ENV === 'production' && captureException(err, {
+        process.env.NODE_ENV === 'production' ? captureException(err, {
             tags: {
               endpoint: 'OTP verification service',
               note: 'Error encountered during OTP verification' 
             },
             level: 'error'
-        });
+        }) : null;
 
         return {
             success: false,
@@ -214,7 +214,7 @@ export async function handleConfirmationCode(_: ActionResult<null>, formData: Fo
     }
 }
 
-export async function signup(_: SignupErrorShape, formData: FormData) {
+export async function signup(_: SignupResponse, formData: FormData) {
     const newUserData = {
         name: formData.get('full-name'),
         userType: formData.get('user-type'),
@@ -243,6 +243,7 @@ export async function signup(_: SignupErrorShape, formData: FormData) {
     const captchaToken = String(formData.get('captcha-token'));
     const cookieStore = await cookies();
     const logger = loggerFor('New user signup');
+    let role = 'user';
 
     try {
         const captchaError = await captcha(captchaToken);
@@ -311,6 +312,7 @@ export async function signup(_: SignupErrorShape, formData: FormData) {
         let validNewVehicle: ValidationResult<NewVehicleSchema>;
 
         if(newSignupData.userType === 'driver') {
+            role = 'driver';
             validNewDriver = validateObjectWithZod(newDriverData, newDriverSchema);
             if(!validNewDriver.success)
                 return {
@@ -332,7 +334,7 @@ export async function signup(_: SignupErrorShape, formData: FormData) {
                 }
         }
 
-        const result = await db.transaction(async tx => {
+        const response = await db.transaction(async tx => {
             const [newUser] = await tx.insert(schemas.users)
             .values(newSignupData)
             .returning();
@@ -349,39 +351,56 @@ export async function signup(_: SignupErrorShape, formData: FormData) {
                     .values({
                         driverId: newDriver.id,
                         ...validNewVehicle.data!
-                    })
+                    });
+
+                const token = signToken(
+                    { driverId: newDriver.id },
+                    process.env.NEW_DRIVER_REG_SECRET!
+                );
+
+                return {
+                    success: true,
+                    errors: undefined,
+                    data: { role: 'driver', token }
+                }
             }
 
-            return newUser;
+            const authToken = signToken(
+                { userId: newUser.id },
+                process.env.ACCESS_TOKEN_SECRET!,
+                '15m'
+            );
+            const refreshToken = signToken(
+                { userId: newUser.id },
+                process.env.REFRESH_TOKEN_SECRET!,
+                '30d'
+            );
+
+            cookieStore.set('x-auth-token', authToken, {
+                httpOnly: true,
+                sameSite: 'lax',
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: 60 * 15
+            });
+            cookieStore.set('refT', refreshToken, {
+                httpOnly: true,
+                sameSite: 'lax',
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: 60 * 60 * 24 * 30
+            });
+
+            return {
+                success: true,
+                errors: undefined,
+                data: { role: 'user', token: authToken }
+            }
         });
 
-        // const accessToken = signToken(
-        //     { _: result.id },
-        //     process.env.ACCESS_TOKEN_SECRET!,
-        //     '15m'
-        // );
-        // const refreshToken = signToken(
-        //     { _: result.id },
-        //     process.env.REFRESH_TOKEN_SECRET!,
-        //     '30d'
-        // );
-
-        // cookieStore.set('x-auth-token', accessToken, {
-        //     httpOnly: true,
-        //     sameSite: 'lax',
-        //     secure: process.env.NODE_ENV === 'production',
-        //     maxAge: 60 * 15
-        // });
-        // cookieStore.set('refT', refreshToken, {
-        //     httpOnly: true,
-        //     sameSite: 'lax',
-        //     secure: process.env.NODE_ENV === 'production',
-        //     maxAge: 60 * 60 * 24 * 30
-        // });
+        return response;
     }
     catch(err) {
         logger.error('Error encountered during account creation', err);
-        process.env.NODE_ENV === 'production' && captureException(err, {
+        captureException(err, {
             tags: {
               endpoint: 'New user signup',
               note: 'Error encountered when trying to create an account' 
@@ -394,10 +413,8 @@ export async function signup(_: SignupErrorShape, formData: FormData) {
             errors: {
                 errorOn: 'driver-vehicle-screen',
                 message: err instanceof Error ? err.message : String(err)
-            }
+            },
+            data: undefined
         }
     }
-
-    redirect('/landing');
 }
-  

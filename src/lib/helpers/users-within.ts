@@ -49,9 +49,6 @@ export async function nearbyDrivers(myLocation: { lat: number; lng: number }, wi
         ),
         columns: {
             id: true,
-            gender: true,
-            name: true,
-            phone: true,
             photo: true,
             rating: true
         }

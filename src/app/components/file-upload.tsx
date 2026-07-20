@@ -46,7 +46,7 @@ export function FileUpload({ label, name, accept, required, folder, setInputValu
     setError(null);
 
     try {
-      const signatureResponse = await fetch('/api/get-upload-signature', {
+      const signatureResponse = await fetch('/api/cloud/get-upload-signature', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ folder }),

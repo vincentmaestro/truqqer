@@ -13,9 +13,13 @@ type NewSignupData = {
     role: string;
 }
 
-export type SignupErrorShape = {
+export type SignupResponse = {
     success: boolean;
     errors?: {
-        [k: string]: string | undefined
+        [k: string]: string
     }
-} | undefined
+    data?: {
+        role: string;
+        token: string;
+    }
+}
