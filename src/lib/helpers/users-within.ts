@@ -1,6 +1,6 @@
-import { db } from "../db";
+import { db } from "../../db";
 import { sql } from 'drizzle-orm';
-import { driverLocations } from '../db/schemas/user-and-driver';
+import { driverLocations } from '../../db/schemas/user-and-driver';
 
 /**
  * Performs a query to find available drivers within a given range/radius relative to the caller's location.

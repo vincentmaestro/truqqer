@@ -9,8 +9,8 @@ import { sendSMSVerificationCode } from "@/lib/services/sms/verify-phone";
 import { capitalizeInitialLetters, hashPassword, signToken, verifyToken } from "@/lib/helpers";
 import { newUserSchema, newDriverSchema, NewDriverSchema } from "@/lib/helpers/zod/user-and-driver";
 import { newVehicleSchema, NewVehicleSchema } from "@/lib/helpers/zod/vehicle";
-import { db } from "@/lib/db";
-import schemas from '@/lib/db/schemas';
+import { db } from "@/db";
+import schemas from '@/db/schemas';
 import { emailThrottle } from "@/lib/redis/throttle/email";
 import { smsOtpThrottle, confirmOtpThrottle } from "@/lib/redis/throttle/sms";
 import { ipThrottle } from "@/lib/redis/throttle/ip-address";
@@ -177,7 +177,7 @@ export async function handleConfirmationCode(_: ActionResult<null>, formData: Fo
                 message: 'Verification failed'
             }
 
-        logger.info(`OTP sent to ${phone} was verified successfully`);
+        logger.info(`OTP sent to ${phone} verified successfully`);
 
         await redis.del(`sms-otp:${phone}`);
         cookieStore.set('crt', continueRegistrationToken, {
@@ -298,7 +298,7 @@ export async function signup(_: SignupResponse, formData: FormData) {
             return {
                 success: false,
                 errors: {
-                    message: 'An account already exists for this user.'
+                    message: 'An account already exists for this user. If you are looking to convert to a driver, sign in and find option on your profile.'
                 }
             }
 
@@ -313,16 +313,7 @@ export async function signup(_: SignupResponse, formData: FormData) {
 
         if(newSignupData.userType === 'driver') {
             role = 'driver';
-            validNewDriver = validateObjectWithZod(newDriverData, newDriverSchema);
-            if(!validNewDriver.success)
-                return {
-                    success: false,
-                    errors: {
-                        errorOn: 'driver-vehicle-screen',
-                        ...validNewDriver.error
-                    }
-                }
-
+            
             validNewVehicle = validateObjectWithZod(newVehicleData, newVehicleSchema);
             if(!validNewVehicle.success)
                 return {
@@ -330,6 +321,16 @@ export async function signup(_: SignupResponse, formData: FormData) {
                     errors: {
                         errorOn: 'driver-vehicle-screen',
                         ...validNewVehicle.error
+                    }
+                }
+
+            validNewDriver = validateObjectWithZod(newDriverData, newDriverSchema);
+            if(!validNewDriver.success)
+                return {
+                    success: false,
+                    errors: {
+                        errorOn: 'driver-vehicle-screen',
+                        ...validNewDriver.error
                     }
                 }
         }
@@ -376,7 +377,7 @@ export async function signup(_: SignupResponse, formData: FormData) {
                 '30d'
             );
 
-            cookieStore.set('x-auth-token', authToken, {
+            cookieStore.set('auth-token', authToken, {
                 httpOnly: true,
                 sameSite: 'lax',
                 secure: process.env.NODE_ENV === 'production',
@@ -415,6 +416,49 @@ export async function signup(_: SignupResponse, formData: FormData) {
                 message: err instanceof Error ? err.message : String(err)
             },
             data: undefined
+        }
+    }
+}
+
+export async function checkDriverApprovalStatus(token: string) {
+    try {
+        const ipThrottleError = await ipThrottle();
+        if(ipThrottleError) return ipThrottleError;
+        
+        const validToken = verifyToken(token, process.env.NEW_DRIVER_REG_SECRET!);
+        if(!validToken.success) 
+            return {
+                success: false, 
+                message: 'The link you entered might be incorrect or broken'
+            }
+        
+        const { driverId } = validToken.data!
+        const driverRecord = await db.query.drivers.findFirst({
+          where: (driver, { eq }) => eq(driver.id, driverId),
+          columns: { approved: true }
+        });
+        
+        if (!driverRecord) 
+            return { 
+                success: false,
+                message: 'No record found for this entry. The link might be incorrect or broken'
+            }
+
+        if (!driverRecord.approved) 
+            return { 
+                success: true,
+                message: 'Application under review. Please watch your inbox for timely updates'
+            }
+        
+        return { 
+            success: true,
+            message: 'Approved'
+        }
+    }
+    catch(err) {
+        return { 
+            success: false,
+            message: err instanceof Error ? err.message : String(err)
         }
     }
 }

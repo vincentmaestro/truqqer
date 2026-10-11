@@ -1,6 +1,6 @@
 import { verifyToken } from '@/lib/helpers';
 import { ipThrottle } from '@/lib/redis/throttle/ip-address';
-import { db } from '@/lib/db';
+import { db } from '@/db';
 import redis from '@/lib/redis';
 import { NextRequest } from 'next/server';
 import loggerFor from "@/lib/utils/logger";

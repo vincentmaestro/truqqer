@@ -6,11 +6,12 @@ import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
 import { Card, CardFooter, CardHeader, CardTitle, CardDescription, CardContent } from '@/app/components/ui/card';
-import { FileUpload } from '../file-upload';
+import { ImageUpload } from '../ui/image-upload';
+import { FileUpload } from '../ui/file-upload';
 import { ArrowLeft, Info } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-export type SignupData= {
+export type SignupData = {
   type: 'name' | 'user-type' | 'gender' | 'password' | 'confirm-password'
   | 'vehicle-make' | 'vehicle-model' | 'vehicle-year' | 'vehicle-color'
   | 'vehicle-type' | 'vehicle-capacity' | 'vehicle-photo' | 'plate-number' 
@@ -103,9 +104,13 @@ export default function ContinueRegistration({ email, phone, }: {
     }
 
     useEffect(() => {
-      if(state.errors?.errorOn === 'driver-vehicle-screen')
+      if(state.errors?.errorOn === 'driver-vehicle-screen') {
         setShowDriverVehicleScreen(true);
-    }, [state.errors, router]);
+        document.getElementById('field-error')?.scrollIntoView();
+      }
+      else
+        setShowDriverVehicleScreen(false);
+    }, [state.errors]);
 
     useEffect(() => {
       const token = state.data?.token;
@@ -162,7 +167,7 @@ export default function ContinueRegistration({ email, phone, }: {
                     onChange={e => setInputValue({ type: 'vehicle-make', value: e.target.value })}
                   />
                   {state.errors?.make && (
-                    <p className="text-sm text-destructive font-medium">{state.errors.make}</p>
+                    <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.make}</p>
                   )}
                 </div>
 
@@ -175,7 +180,7 @@ export default function ContinueRegistration({ email, phone, }: {
                     onChange={e => setInputValue({ type: 'vehicle-model', value: e.target.value })}
                   />
                   {state.errors?.model && (
-                    <p className="text-sm text-destructive font-medium">{state.errors.model}</p>
+                    <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.model}</p>
                   )}
                 </div>
               </div>
@@ -193,7 +198,7 @@ export default function ContinueRegistration({ email, phone, }: {
                     onChange={e => setInputValue({ type: 'vehicle-year', value: e.target.value })}
                   />
                   {state.errors?.year && (
-                    <p className="text-sm text-destructive font-medium">{state.errors.year}</p>
+                    <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.year}</p>
                   )}
                 </div>
 
@@ -206,7 +211,7 @@ export default function ContinueRegistration({ email, phone, }: {
                     onChange={e => setInputValue({ type: 'vehicle-color', value: e.target.value })}
                   />
                   {state.errors?.color && (
-                    <p className="text-sm text-destructive font-medium">{state.errors.color}</p>
+                    <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.color}</p>
                   )}
                 </div>
               </div>
@@ -230,12 +235,12 @@ export default function ContinueRegistration({ email, phone, }: {
                   </SelectContent>
                 </Select>
                 {state.errors?.type && (
-                  <p className="text-sm text-destructive font-medium">{state.errors.truckType}</p>
+                  <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.type}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="plate-number">License plate/Plate number</Label>
+                <Label htmlFor="plate-number">Plate number</Label>
                 <Input
                   id="plate-number"
                   name="plate-number"
@@ -244,7 +249,7 @@ export default function ContinueRegistration({ email, phone, }: {
                   onChange={e => setInputValue({ type: 'plate-number', value: e.target.value })}
                 />
                 {state.errors?.plateNumber && (
-                  <p className="text-sm text-destructive font-medium">{state.errors.plateNumber}</p>
+                  <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.plateNumber}</p>
                 )}
               </div>
 
@@ -257,16 +262,17 @@ export default function ContinueRegistration({ email, phone, }: {
                   onChange={e => setInputValue({ type: 'vehicle-capacity', value: e.target.value })}
                 />
                 {state.errors?.capacity && (
-                  <p className="text-sm text-destructive font-medium">{state.errors.capacity}</p>
+                  <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.capacity}</p>
                 )}
               </div>
 
-              <FileUpload
+              <ImageUpload
               label='Vehicle photo'
               name='vehicle-photo'
               accept='image/*'
               required
               folder='vehicle-photos'
+              value={inputValue.vehiclePhoto}
               setInputValue={setInputValue}
               />
             </div>
@@ -284,27 +290,29 @@ export default function ContinueRegistration({ email, phone, }: {
                   onChange={e => setInputValue({ type: 'driver-license-number', value: e.target.value })}
                 />
                 {state.errors?.licenseNumber && (
-                  <p className="text-sm text-destructive font-medium">
+                  <p id='field-error' className="text-sm text-destructive font-medium">
                     {state.errors.licenseNumber}
                   </p>
                 )}
               </div>
 
-              <FileUpload
+              <ImageUpload
               label='Driver license photo'
               name='driver-license-photo'
               accept='image/*'
               required
               folder='driver-license-photos'
+              value={inputValue.driverLicensePhoto}
               setInputValue={setInputValue}
               />
 
-              <FileUpload
+              <ImageUpload
               label='Driver photo/portrait'
               name='driver-photo'
               accept='image/*'
               required
               folder='driver-photos'
+              value={inputValue.driverPhoto}
               setInputValue={setInputValue}
               />
             </div>
@@ -318,21 +326,23 @@ export default function ContinueRegistration({ email, phone, }: {
               accept='application/pdf'
               required
               folder='vehicle-insurance-docs'
+              value={inputValue.insuranceDocument}
               setInputValue={setInputValue}
               />
 
               <FileUpload
-                label='Vehicle registration document'
-                name='vehicle-registration-document'
-                accept='application/pdf'
-                required
-                folder='vehicle-registration-docs'
-                setInputValue={setInputValue}
-                />
+              label='Vehicle registration document'
+              name='vehicle-registration-document'
+              accept='application/pdf'
+              required
+              folder='vehicle-registration-docs'
+              value={inputValue.vehicleRegistration}
+              setInputValue={setInputValue}
+              />
             </div>
 
             {state.errors?.message && (
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <div id='field-error' className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
                 <p className="text-sm text-destructive font-medium">{state.errors.message}</p>
               </div>
             )}
