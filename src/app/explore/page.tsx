@@ -1,18 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Card, CardContent } from '@/app/components/ui/card';
+import { MapPin, Calendar, Truck, Search, Star, Clock } from 'lucide-react';
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/app/components/ui/combobox"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from '@/app/components/ui/select';
-import { MapPin, Calendar, Truck, Search, Star, Clock, AlertCircle } from 'lucide-react';
 
 const MOCK_DRIVERS = [
   {
@@ -53,7 +61,16 @@ const MOCK_DRIVERS = [
   },
 ];
 
+interface Location {
+  coords: { latitude: number, longitude: number };
+  name: string
+}
+
 export default function ExplorePage() {
+  const [currentLocation, setCurrentLocation] = useState<Location>({
+    coords: { latitude: 0, longitude: 0 },
+    name: 'Enter pickup location'
+  });
   const [filters, setFilters] = useState({
     from: '',
     to: '',
@@ -62,6 +79,90 @@ export default function ExplorePage() {
   });
   const [searchSubmitted, setSearchSubmitted] = useState(false);
   const [drivers, setDrivers] = useState<typeof MOCK_DRIVERS>([]);
+
+  const [from, setFrom] = useState({
+    searched: '',
+    locations: [currentLocation]
+  });
+
+  function ComboboxComponent({ items, placeholder }: {
+    items: Location[],
+    placeholder?: string
+  }) {
+    return (
+      <Combobox
+      items={items}
+      itemToStringValue={(item: Location) => item.name}
+      >
+        <ComboboxInput
+        onChange={e => setFrom({ ...from, searched: e.target.value })}
+        placeholder={placeholder} />
+        <ComboboxContent>
+          <ComboboxEmpty>No items found.</ComboboxEmpty>
+          <ComboboxList>
+            {(item: Location) => (
+              <ComboboxItem key={item.name} value={item.coords}>
+                {item.name}
+              </ComboboxItem>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+    )
+  }
+ 
+  async function getCurrentLocation() {
+    if(navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { coords } = position;
+          
+          try {
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}`
+            );
+            
+            if(!response.ok)
+              throw new Error('Failed to fetch details for this location');
+
+            const data = await response.json();
+            const { display_name, address } = data;
+            const { city, town, village, county, postcode, state, country } = address;
+
+            setCurrentLocation({
+              coords,
+              name: display_name ?? `${city || town || village}, ${postcode} - ${county}, ${state}, ${country}`
+            });
+          }
+          catch(err) {
+            setCurrentLocation({
+              coords,
+              name: err instanceof Error ? err.message : String(err)
+            });
+            console.error(err instanceof Error ? err.message : String(err));
+          }
+        },
+        error => {
+          setCurrentLocation({
+            coords: { latitude: 0, longitude: 0 },
+            name:`Unable to query current location. (${error.message}.) Adjust settings, refresh and retry.`
+          });
+          console.error(error.message);
+        }
+      );
+    }
+  }
+
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
+
+  useEffect(() => {
+    setFrom({
+      ...from,
+      locations: [currentLocation]
+    });
+  }, [currentLocation]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -91,14 +192,7 @@ export default function ExplorePage() {
                 <MapPin className="w-4 h-4 text-primary" />
                 From
               </Label>
-              <Input
-                id="from"
-                type="text"
-                placeholder="Enter pickup location"
-                value={filters.from}
-                onChange={(e) => handleFilterChange('from', e.target.value)}
-                className="border-primary/20"
-              />
+              <ComboboxComponent items={from.locations} placeholder={currentLocation.name} />
             </div>
 
             <div className="space-y-2">

@@ -10,11 +10,13 @@
     "migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@base-ui/react": "^1.9.0",
     "@sentry/nextjs": "^10.57.0",
     "bcrypt": "^6.0.0",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.10.0",
     "clsx": "^2.1.1",
+    "cn": "^0.4.0",
     "drizzle-orm": "^0.44.5",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.562.0",
