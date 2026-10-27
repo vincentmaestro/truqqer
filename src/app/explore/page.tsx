@@ -1,19 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { MapPin, Calendar, Truck, Search, Star, Clock } from 'lucide-react';
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@/app/components/ui/combobox"
+import { Location } from '@/types';
+import { From, To } from '../components/explore/select';
 import {
   Select,
   SelectContent,
@@ -61,16 +55,7 @@ const MOCK_DRIVERS = [
   },
 ];
 
-interface Location {
-  coords: { latitude: number, longitude: number };
-  name: string
-}
-
 export default function ExplorePage() {
-  const [currentLocation, setCurrentLocation] = useState<Location>({
-    coords: { latitude: 0, longitude: 0 },
-    name: 'Enter pickup location'
-  });
   const [filters, setFilters] = useState({
     from: '',
     to: '',
@@ -80,38 +65,16 @@ export default function ExplorePage() {
   const [searchSubmitted, setSearchSubmitted] = useState(false);
   const [drivers, setDrivers] = useState<typeof MOCK_DRIVERS>([]);
 
-  const [from, setFrom] = useState({
-    searched: '',
-    locations: [currentLocation]
+  const [currentLocation, setCurrentLocation] = useState<Location>({
+    coords: { latitude: 0, longitude: 0 },
+    name: ''
   });
+  const [fromLocations, setFromLocations] = useState([currentLocation]);
+  const [selectedFromLocation, setSelectedFromLocation] = useState<Location | null>(null);
+  const [toLocations, setToLocations] = useState<Location[]>([]);
+  const [selectedToLocation, setSelectedToLocation] = useState<Location | null>(null);
 
-  function ComboboxComponent({ items, placeholder }: {
-    items: Location[],
-    placeholder?: string
-  }) {
-    return (
-      <Combobox
-      items={items}
-      itemToStringValue={(item: Location) => item.name}
-      >
-        <ComboboxInput
-        onChange={e => setFrom({ ...from, searched: e.target.value })}
-        placeholder={placeholder} />
-        <ComboboxContent>
-          <ComboboxEmpty>No items found.</ComboboxEmpty>
-          <ComboboxList>
-            {(item: Location) => (
-              <ComboboxItem key={item.name} value={item.coords}>
-                {item.name}
-              </ComboboxItem>
-            )}
-          </ComboboxList>
-        </ComboboxContent>
-      </Combobox>
-    )
-  }
- 
-  async function getCurrentLocation() {
+  function getCurrentLocation() {
     if(navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -119,25 +82,27 @@ export default function ExplorePage() {
           
           try {
             const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}`
+              `/api/locations/search/v1/coord?lat=${coords.latitude}&lng=${coords.longitude}`
             );
-            
-            if(!response.ok)
-              throw new Error('Failed to fetch details for this location');
 
-            const data = await response.json();
-            const { display_name, address } = data;
-            const { city, town, village, county, postcode, state, country } = address;
+            const result = await response.json();
+            if(result.error) {
+              setCurrentLocation({
+                coords,
+                name: 'Failed to fetch name for this location.'
+              });
+            }
 
+            const { name } = result;
             setCurrentLocation({
               coords,
-              name: display_name ?? `${city || town || village}, ${postcode} - ${county}, ${state}, ${country}`
+              name
             });
           }
           catch(err) {
             setCurrentLocation({
               coords,
-              name: err instanceof Error ? err.message : String(err)
+              name: 'Failed to fetch name for this location. Kindly retry action.'
             });
             console.error(err instanceof Error ? err.message : String(err));
           }
@@ -145,7 +110,7 @@ export default function ExplorePage() {
         error => {
           setCurrentLocation({
             coords: { latitude: 0, longitude: 0 },
-            name:`Unable to query current location. (${error.message}.) Adjust settings, refresh and retry.`
+            name:`Unable to query current location. (${error.message}). Adjust settings, refresh and retry.`
           });
           console.error(error.message);
         }
@@ -153,16 +118,8 @@ export default function ExplorePage() {
     }
   }
 
-  useEffect(() => {
-    getCurrentLocation();
-  }, []);
-
-  useEffect(() => {
-    setFrom({
-      ...from,
-      locations: [currentLocation]
-    });
-  }, [currentLocation]);
+  useEffect(() => {getCurrentLocation()}, []);
+  useEffect(() => {setSelectedFromLocation(currentLocation)}, [currentLocation]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -192,7 +149,13 @@ export default function ExplorePage() {
                 <MapPin className="w-4 h-4 text-primary" />
                 From
               </Label>
-              <ComboboxComponent items={from.locations} placeholder={currentLocation.name} />
+
+              <From
+              locations={fromLocations}
+              placeholder={selectedFromLocation?.name || 'Enter pickup location'}
+              setLocations={setFromLocations}
+              setSelectedLocation={setSelectedFromLocation}
+              />
             </div>
 
             <div className="space-y-2">
@@ -200,13 +163,11 @@ export default function ExplorePage() {
                 <MapPin className="w-4 h-4 text-primary" />
                 To
               </Label>
-              <Input
-                id="to"
-                type="text"
-                placeholder="Enter destination"
-                value={filters.to}
-                onChange={(e) => handleFilterChange('to', e.target.value)}
-                className="border-primary/20"
+              
+              <To
+              locations={toLocations}
+              setLocations={setToLocations}
+              setSelectedLocation={setSelectedToLocation}
               />
             </div>
 

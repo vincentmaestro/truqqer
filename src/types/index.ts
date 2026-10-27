@@ -5,14 +5,6 @@ export type ActionResult<T> = {
     data?: T
 }
 
-type NewSignupData = {
-    accessToken: string;
-    email: string;
-    name: string;
-    photo: string | null;
-    role: string;
-}
-
 export type SignupResponse = {
     success: boolean;
     errors?: {
@@ -22,4 +14,9 @@ export type SignupResponse = {
         role: string;
         token: string;
     }
+}
+
+export interface Location {
+  coords: { latitude: number, longitude: number };
+  name: string
 }

@@ -3,7 +3,7 @@ import { validateEmail, validateObjectWithZod } from "@/lib/helpers/zod/function
 import { captcha } from "@/lib/utils/captcha";
 import { captureException } from '@sentry/nextjs';
 import loggerFor from "@/lib/utils/logger";
-import { ActionResult, SignupResponse } from "@/types/signup";
+import { ActionResult, SignupResponse } from "@/types";
 import { sendEmailVerificationLink, sendExistingUserSignupNotification } from "@/lib/services/mail/verify-email";
 import { sendSMSVerificationCode } from "@/lib/services/sms/verify-phone";
 import { capitalizeInitialLetters, hashPassword, signToken, verifyToken } from "@/lib/helpers";
