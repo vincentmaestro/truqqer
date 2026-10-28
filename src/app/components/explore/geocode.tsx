@@ -13,13 +13,13 @@ export function From({ locations, placeholder, setLocations, setSelectedLocation
   locations: Location[],
   placeholder?: string,
   setLocations: React.Dispatch<React.SetStateAction<Location[]>>,
-  setSelectedLocation: React.Dispatch<React.SetStateAction<Location | null>>
+  setSelectedLocation: React.Dispatch<React.SetStateAction<Location>>
 }) {
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   async function searchLocation(query: string) {
     try {
-      const res = await fetch(`/api/locations/search/v1/text?q=${query}`);
+      const res = await fetch(`/api/v1/locations/search/text?q=${query}`);
       if (!res.ok) throw new Error(`Search failed: ${res.status}`);
 
       const { data } = await res.json();
@@ -80,7 +80,7 @@ export function To({ locations, setLocations, setSelectedLocation }: {
 
   async function searchLocation(query: string) {
     try {
-      const res = await fetch(`/api/locations/search/v1/text?q=${query}`);
+      const res = await fetch(`/api/v1/locations/search/text?q=${query}`);
       if (!res.ok) throw new Error(`Search failed: ${res.status}`);
 
       const { data } = await res.json();

@@ -12,10 +12,11 @@ interface FileUploadProps {
   required?: boolean;
   folder: string;
   value: string;
+  token: string;
   setInputValue: React.Dispatch<SignupData>
 }
 
-export function FileUpload({ label, name, accept, required, folder, value, setInputValue }: FileUploadProps) {
+export function FileUpload({ label, name, accept, required, folder, value, token, setInputValue }: FileUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState('');
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
@@ -39,17 +40,17 @@ export function FileUpload({ label, name, accept, required, folder, value, setIn
     setError(null);
 
     try {
-      const signatureResponse = await fetch('/api/cloud/get-upload-signature', {
+      const res = await fetch('/api/v1/cloud/g-sn', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ folder }),
+        body: JSON.stringify({ token, folder }),
       });
+      if (!res.ok) throw new Error('Request failed');
 
-      if (!signatureResponse.ok) {
-        throw new Error('Failed to get upload signature');
-      }
+      let data = await res.json();
+      if(data.error) throw new Error(data.error);
 
-      const { signature, timestamp, cloudName, apiKey } = await signatureResponse.json();
+      const { signature, timestamp, cloudName, apiKey } = data;
 
       const formData = new FormData();
       formData.append('file', file);
@@ -66,14 +67,15 @@ export function FileUpload({ label, name, accept, required, folder, value, setIn
         }
       );
 
-      const data = await uploadResponse.json();
+      data = await uploadResponse.json();
+
       if (data.secure_url) {
         setInputValue({ type: name as SignupData['type'], value: data.secure_url });
       } else {
         throw new Error('Upload failed');
       }
     } catch (err) {
-      setError('Upload failed. Please try again.');
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setUploading(false);
     }

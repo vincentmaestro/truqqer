@@ -20,9 +20,10 @@ export type SignupData = {
   value: string
 }
 
-export default function ContinueRegistration({ email, phone, }: {
+export default function ContinueRegistration({ email, phone, token }: {
   email: string;
   phone: string;
+  token: string;
 }) {
     const initialInputValues = {
       name: '', userType: '', gender: '', password: '', confirmPassword: '',
@@ -273,6 +274,7 @@ export default function ContinueRegistration({ email, phone, }: {
               required
               folder='vehicle-photos'
               value={inputValue.vehiclePhoto}
+              token={token}
               setInputValue={setInputValue}
               />
             </div>
@@ -303,6 +305,7 @@ export default function ContinueRegistration({ email, phone, }: {
               required
               folder='driver-license-photos'
               value={inputValue.driverLicensePhoto}
+              token={token}
               setInputValue={setInputValue}
               />
 
@@ -313,6 +316,7 @@ export default function ContinueRegistration({ email, phone, }: {
               required
               folder='driver-photos'
               value={inputValue.driverPhoto}
+              token={token}
               setInputValue={setInputValue}
               />
             </div>
@@ -327,6 +331,7 @@ export default function ContinueRegistration({ email, phone, }: {
               required
               folder='vehicle-insurance-docs'
               value={inputValue.insuranceDocument}
+              token={token}
               setInputValue={setInputValue}
               />
 
@@ -337,6 +342,7 @@ export default function ContinueRegistration({ email, phone, }: {
               required
               folder='vehicle-registration-docs'
               value={inputValue.vehicleRegistration}
+              token={token}
               setInputValue={setInputValue}
               />
             </div>

@@ -1,3 +1,4 @@
+import { verifyToken } from "@/lib/helpers";
 import { v2 as cloudinary } from "cloudinary";
 
 cloudinary.config({
@@ -8,7 +9,15 @@ cloudinary.config({
 
 export async function POST(request: Request) {
     try{
-        const { folder } = await request.json();
+        const { token, folder } = await request.json();
+
+        const validToken = verifyToken(
+            token.value,
+            process.env.PHONE_VERIFICATION_SECRET!
+        );
+        if(!validToken.success)
+            return Response.json({ error: 'Provide a token to complete this request.' }, { status: 403 });
+
         const timestamp = Math.round(new Date().getTime() / 1000);
         const signature = cloudinary.utils.api_sign_request({
             timestamp,
@@ -23,6 +32,11 @@ export async function POST(request: Request) {
         });
     }
     catch(err) {
-        return Response.json({ error: 'Failed to generate signature' }, { status: 500 });
+        return Response.json({
+            error: err instanceof Error
+            ? err.message
+            : 'Failed to generate signature.'
+        },
+        { status: 500 });
     }
 }

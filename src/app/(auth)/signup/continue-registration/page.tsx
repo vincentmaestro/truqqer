@@ -22,5 +22,5 @@ export default async function ContinueRegistrationPage({ searchParams }: {
 
     const { email, phone } = validToken.data;
 
-    return <ContinueRegistration email={email} phone={phone} />
+    return <ContinueRegistration email={email} phone={phone} token={token.value} />
 }

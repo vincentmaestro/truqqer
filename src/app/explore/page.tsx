@@ -7,7 +7,7 @@ import { Label } from '@/app/components/ui/label';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { MapPin, Calendar, Truck, Search, Star, Clock } from 'lucide-react';
 import { Location } from '@/types';
-import { From, To } from '../components/explore/select';
+import { From, To } from '../components/explore/geocode';
 import {
   Select,
   SelectContent,
@@ -15,7 +15,20 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/app/components/ui/select';
+import dynamic from 'next/dynamic';
 
+const MapComponent = dynamic(
+  () => import('../components/explore/map').then(c => c.MapComponentV1),
+  {
+    ssr: false,
+    loading: () =>
+      <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/20">
+        <p className="font-semibold text-foreground">Loading Live Map View</p>
+      </div>
+  }
+);
+
+const NIGERIA = { latitude: 9.0820, longitude: 8.6753 };
 const MOCK_DRIVERS = [
   {
     id: '1',
@@ -66,11 +79,11 @@ export default function ExplorePage() {
   const [drivers, setDrivers] = useState<typeof MOCK_DRIVERS>([]);
 
   const [currentLocation, setCurrentLocation] = useState<Location>({
-    coords: { latitude: 0, longitude: 0 },
+    coords: NIGERIA,
     name: ''
   });
   const [fromLocations, setFromLocations] = useState([currentLocation]);
-  const [selectedFromLocation, setSelectedFromLocation] = useState<Location | null>(null);
+  const [selectedFromLocation, setSelectedFromLocation] = useState(currentLocation);
   const [toLocations, setToLocations] = useState<Location[]>([]);
   const [selectedToLocation, setSelectedToLocation] = useState<Location | null>(null);
 
@@ -82,7 +95,7 @@ export default function ExplorePage() {
           
           try {
             const response = await fetch(
-              `/api/locations/search/v1/coord?lat=${coords.latitude}&lng=${coords.longitude}`
+              `/api/v1/locations/search/coord?lat=${coords.latitude}&lng=${coords.longitude}`
             );
 
             const result = await response.json();
@@ -109,7 +122,7 @@ export default function ExplorePage() {
         },
         error => {
           setCurrentLocation({
-            coords: { latitude: 0, longitude: 0 },
+            coords: NIGERIA,
             name:`Unable to query current location. (${error.message}). Adjust settings, refresh and retry.`
           });
           console.error(error.message);
@@ -231,22 +244,10 @@ export default function ExplorePage() {
           )}
         </div>
 
-        <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/20">
-          <div className="text-center space-y-3">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-                <MapPin className="w-10 h-10 text-primary" />
-              </div>
-              <div>
-                <p className="font-semibold text-foreground">Live Map View</p>
-                <p className="text-sm text-muted-foreground">
-                  See drivers in real-time
-                </p>
-              </div>
-              <p className="text-xs text-muted-foreground/70 max-w-xs">
-                Search to see available drivers and their locations on an interactive map
-              </p>
-          </div>
-        </div>
+        <MapComponent
+        from={selectedFromLocation.coords}
+        to={selectedToLocation?.coords}
+        />
 
         <div className="flex flex-col gap-4 overflow-y-auto border-l border-border pl-4">
           {!searchSubmitted ? (
