@@ -1,6 +1,6 @@
 'use client';
 import { useActionState, useTransition } from 'react';
-import { handleVerifyEmail } from '@/actions/signup';
+import { handleVerifyEmail } from '@/actions/auth';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';

@@ -1,6 +1,12 @@
 import * as drizzle from 'drizzle-orm/pg-core';
 import { timestamps } from '../helpers/timestamps';
 
+export const roleEnum = drizzle.pgEnum('role', [
+    'user',
+    'driver',
+    'admin'
+]);
+
 export const genderEnum = drizzle.pgEnum('gender', [
     'male',
     'female',
@@ -14,17 +20,13 @@ export const users = drizzle.pgTable(
         name: drizzle.varchar().notNull(),
         email: drizzle.varchar().unique().notNull(),
         phone: drizzle.varchar().unique().notNull(),
-        role: drizzle.varchar().default('user').notNull(),
+        role: roleEnum().default('user').notNull(),
         gender: genderEnum().notNull(),
         password: drizzle.text().notNull(),
         photo: drizzle.text(),
         suspended: drizzle.boolean().default(false).notNull(),
         ...timestamps,
-    },
-    (table) => [
-        drizzle.index('email_index').on(table.email),
-        drizzle.index('created_at_index').on(table.createdAt),
-    ]
+    }
 );
 
 export const userLocations = drizzle.pgTable(
@@ -39,7 +41,6 @@ export const userLocations = drizzle.pgTable(
             .$onUpdate(() => new Date())
     },
     (table) => [
-        drizzle.index('user_id_idx').on(table.userId),
         drizzle.index('user_location_idx').using('gist', table.location)
     ]
 );
@@ -55,12 +56,11 @@ export const drivers = drizzle.pgTable(
         approved: drizzle.boolean().default(false).notNull(),
         isAvailable: drizzle.boolean().default(false).notNull(),
         rating: drizzle.numeric({ precision: 4, scale: 2 }),
-        suspended: drizzle.boolean().default(false).notNull(),
         ...timestamps
     },
     (table) => [
-        drizzle.index('approved_index').on(table.approved),
-        drizzle.index('is_available_index').on(table.isAvailable)
+        drizzle.index('driver_approved_idx').on(table.approved),
+        drizzle.index('driver_available_idx').on(table.isAvailable)
     ]
 );
 
@@ -76,7 +76,6 @@ export const driverLocations = drizzle.pgTable(
             .$onUpdate(() => new Date())
     },
     (table) => [
-        drizzle.index('driver_id_idx').on(table.driverId),
         drizzle.index('driver_location_idx').using('gist', table.location)
     ]
 );

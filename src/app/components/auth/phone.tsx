@@ -1,6 +1,6 @@
 'use client';
 import { useActionState, useEffect, useRef, useState, useTransition } from 'react';
-import { handleVerifyPhone, handleConfirmationCode } from '@/actions/signup';
+import { handleVerifyPhone, handleConfirmationCode } from '@/actions/auth';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';

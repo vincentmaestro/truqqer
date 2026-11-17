@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Button } from '@/app/components/ui/button';
 import { AlertCircle, CheckCircle2, BookOpen, MessageSquare, HelpCircle, Clock, Check, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { checkDriverApprovalStatus } from '@/actions/signup';
+import { checkDriverApprovalStatus } from '@/actions/auth';
 
 function ErrorMessage({ info }: {
   info: string

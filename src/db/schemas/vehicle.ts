@@ -2,17 +2,6 @@ import * as drizzle from 'drizzle-orm/pg-core';
 import { drivers } from './user-and-driver';
 import { timestamps } from '../helpers/timestamps';
 
-// export const vehicleTypeEnum = drizzle.pgEnum('vehicle_type', [
-//     'flatbed',
-//     'boxed',
-//     'tow van',
-//     'tipper',
-//     'car carrier',
-//     'mini truck',
-//     'pickup truck',
-//     'tanker'
-// ]);
-
 export const vehicle = drizzle.pgTable(
     'vehicle',
     {

@@ -1,6 +1,6 @@
 'use client';
 import { useActionState, useEffect, useReducer, useState, useTransition } from 'react';
-import { signup } from '@/actions/signup';
+import { signup } from '@/actions/auth';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
@@ -14,7 +14,7 @@ import { useRouter } from 'next/navigation';
 export type SignupData = {
   type: 'name' | 'user-type' | 'gender' | 'password' | 'confirm-password'
   | 'vehicle-make' | 'vehicle-model' | 'vehicle-year' | 'vehicle-color'
-  | 'vehicle-type' | 'vehicle-capacity' | 'vehicle-photo' | 'plate-number' 
+  | 'vehicle-type' | 'vehicle-capacity' | 'vehicle-photo' | 'plate-number'
   | 'driver-photo' | 'driver-license-number' | 'driver-license-photo'
   | 'vehicle-insurance-document' | 'vehicle-registration-document',
   value: string
@@ -36,7 +36,6 @@ export default function ContinueRegistration({ email, phone, token }: {
     const [state, submit] = useActionState(signup, {
       success: false,
       errors: undefined,
-      // data: undefined
     });
     const [loading, startTransition] = useTransition();
     const router = useRouter();
@@ -87,7 +86,7 @@ export default function ContinueRegistration({ email, phone, token }: {
         form.set('vehicle-photo', inputValue.vehiclePhoto);
         form.set('plate-number', inputValue.plateNumber.trim());
         form.set('driver-photo', inputValue.driverPhoto);
-        form.set('driver-license-number', inputValue.driverLicenseNumber.trim());
+        form.set('driver-license-number', inputValue.driverLicenseNumber.toUpperCase().trim());
         form.set('driver-license-photo', inputValue.driverLicensePhoto);
         form.set('vehicle-insurance-document', inputValue.insuranceDocument);
         form.set('vehicle-registration-document', inputValue.vehicleRegistration);
@@ -137,7 +136,7 @@ export default function ContinueRegistration({ email, phone, token }: {
 
     if(showDriverVehicleScreen)
       return (
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-4xl">
         <CardHeader>
           <button
             type="button"
@@ -154,11 +153,11 @@ export default function ContinueRegistration({ email, phone, token }: {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSignup} className="space-y-6">
+          <form onSubmit={handleSignup} className="mt-4 space-y-8">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-foreground">Vehicle Information</h3>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="make">Make</Label>
                   <Input
@@ -186,7 +185,7 @@ export default function ContinueRegistration({ email, phone, token }: {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="year">Year</Label>
                   <Input
@@ -217,66 +216,70 @@ export default function ContinueRegistration({ email, phone, token }: {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="truck-type">Vehicle Type</Label>
-                <Select
-                name="vehicle-type"
-                value={inputValue.vehicleType}
-                onValueChange={value => setInputValue({ type: 'vehicle-type', value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select an option" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {truckTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {state.errors?.type && (
-                  <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.type}</p>
-                )}
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div className="space-y-2">
+                  <Label htmlFor="truck-type">Vehicle Type</Label>
+                  <Select
+                  name="vehicle-type"
+                  value={inputValue.vehicleType}
+                  onValueChange={value => setInputValue({ type: 'vehicle-type', value })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select an option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {truckTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {state.errors?.type && (
+                    <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.type}</p>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="plate-number">Plate number</Label>
-                <Input
-                  id="plate-number"
-                  name="plate-number"
-                  className="uppercase"
-                  value={inputValue.plateNumber}
-                  onChange={e => setInputValue({ type: 'plate-number', value: e.target.value })}
+                <ImageUpload
+                label='Vehicle photo'
+                name='vehicle-photo'
+                accept='image/*'
+                required
+                folder='vehicle-photos'
+                value={inputValue.vehiclePhoto}
+                token={token}
+                setInputValue={setInputValue}
                 />
-                {state.errors?.plateNumber && (
-                  <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.plateNumber}</p>
-                )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="capacity">Vehicle capacity (Kg or Litres) - Optional</Label>
-                <Input
-                  id="capacity"
-                  name="capacity"
-                  value={inputValue.vehicleCapacity}
-                  onChange={e => setInputValue({ type: 'vehicle-capacity', value: e.target.value })}
-                />
-                {state.errors?.capacity && (
-                  <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.capacity}</p>
-                )}
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div className="space-y-2">
+                  <Label htmlFor="plate-number">Plate number</Label>
+                  <Input
+                    id="plate-number"
+                    name="plate-number"
+                    className="uppercase"
+                    value={inputValue.plateNumber}
+                    onChange={e => setInputValue({ type: 'plate-number', value: e.target.value })}
+                  />
+                  {state.errors?.plateNumber && (
+                    <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.plateNumber}</p>
+                  )}
+                </div>
 
-              <ImageUpload
-              label='Vehicle photo'
-              name='vehicle-photo'
-              accept='image/*'
-              required
-              folder='vehicle-photos'
-              value={inputValue.vehiclePhoto}
-              token={token}
-              setInputValue={setInputValue}
-              />
+                <div className="space-y-2">
+                  <Label htmlFor="capacity">Vehicle capacity (Kg or Litres) - Optional</Label>
+                  <Input
+                    id="capacity"
+                    name="capacity"
+                    value={inputValue.vehicleCapacity}
+                    onChange={e => setInputValue({ type: 'vehicle-capacity', value: e.target.value })}
+                  />
+                  {state.errors?.capacity && (
+                    <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.capacity}</p>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -298,53 +301,57 @@ export default function ContinueRegistration({ email, phone, token }: {
                 )}
               </div>
 
-              <ImageUpload
-              label='Driver license photo'
-              name='driver-license-photo'
-              accept='image/*'
-              required
-              folder='driver-license-photos'
-              value={inputValue.driverLicensePhoto}
-              token={token}
-              setInputValue={setInputValue}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <ImageUpload
+                label='Driver license photo'
+                name='driver-license-photo'
+                accept='image/*'
+                required
+                folder='driver-license-photos'
+                value={inputValue.driverLicensePhoto}
+                token={token}
+                setInputValue={setInputValue}
+                />
 
-              <ImageUpload
-              label='Driver photo/portrait'
-              name='driver-photo'
-              accept='image/*'
-              required
-              folder='driver-photos'
-              value={inputValue.driverPhoto}
-              token={token}
-              setInputValue={setInputValue}
-              />
+                <ImageUpload
+                label='Driver photo/portrait'
+                name='driver-photo'
+                accept='image/*'
+                required
+                folder='driver-photos'
+                value={inputValue.driverPhoto}
+                token={token}
+                setInputValue={setInputValue}
+                />
+              </div>
             </div>
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-foreground">Vehicle Documents</h3>
 
-              <FileUpload
-              label='Vehicle insurance document'
-              name='vehicle-insurance-document'
-              accept='application/pdf'
-              required
-              folder='vehicle-insurance-docs'
-              value={inputValue.insuranceDocument}
-              token={token}
-              setInputValue={setInputValue}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <FileUpload
+                label='Vehicle insurance document'
+                name='vehicle-insurance-document'
+                accept='application/pdf'
+                required
+                folder='vehicle-insurance-docs'
+                value={inputValue.insuranceDocument}
+                token={token}
+                setInputValue={setInputValue}
+                />
 
-              <FileUpload
-              label='Vehicle registration document'
-              name='vehicle-registration-document'
-              accept='application/pdf'
-              required
-              folder='vehicle-registration-docs'
-              value={inputValue.vehicleRegistration}
-              token={token}
-              setInputValue={setInputValue}
-              />
+                <FileUpload
+                label='Vehicle registration document'
+                name='vehicle-registration-document'
+                accept='application/pdf'
+                required
+                folder='vehicle-registration-docs'
+                value={inputValue.vehicleRegistration}
+                token={token}
+                setInputValue={setInputValue}
+                />
+              </div>
             </div>
 
             {state.errors?.message && (
@@ -354,8 +361,8 @@ export default function ContinueRegistration({ email, phone, token }: {
             )}
 
             <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
-              <p className="text-sm text-primary flex gap-x-3">
-                <Info size={50} />
+              <p className="text-sm text-primary flex items-start gap-x-3">
+                <Info size={18} className="shrink-0 mt-0.5" />
                 <span>
                   Your account will be reviewed by our team. You'll receive a notification once approved (usually within 24-48 hours).
                 </span>
@@ -364,18 +371,18 @@ export default function ContinueRegistration({ email, phone, token }: {
 
             <p className="text-xs text-muted-foreground text-center">
               By signing up, you agree to our{' '}
-              <a 
-                href="/terms-of-service" 
-                target="_blank" 
+              <a
+                href="/terms-of-service"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline font-medium"
               >
                 Terms of Service
               </a>
               {' '}and{' '}
-              <a 
-                href="/privacy-policy" 
-                target="_blank" 
+              <a
+                href="/privacy-policy"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline font-medium"
               >
@@ -410,15 +417,15 @@ export default function ContinueRegistration({ email, phone, token }: {
     );
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-xl">
       <CardHeader>
         <CardTitle className="text-2xl">Complete your profile</CardTitle>
         <CardDescription>Just a few more to go...</CardDescription>
       </CardHeader>
 
       <CardContent>
-        <form onSubmit={handleSignup} className="space-y-4">
-          <div className="space-y-2 cursor-default">
+        <form onSubmit={handleSignup} className="mt-4 space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 cursor-default">
             <p className="text-sm border-success/20 bg-success/10 text-success p-2.5 rounded-md">{email}</p>
             <p className="text-sm border-success/20 bg-success/10 text-success p-2.5 rounded-md">{phone}</p>
           </div>
@@ -436,99 +443,103 @@ export default function ContinueRegistration({ email, phone, token }: {
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="user-type">I want to</Label>
-            <Select
-            name="user-type"
-            value={inputValue.userType}
-            onValueChange={value => setInputValue({ type: 'user-type', value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select an option" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="user">Request truck services</SelectItem>
-                <SelectItem value="driver">Offer truck services</SelectItem>
-              </SelectContent>
-            </Select>
-            {state?.errors?.userType && (
-              <p className="text-sm text-destructive font-medium">
-                {state?.errors.userType}
-              </p>
-            )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="user-type">I want to</Label>
+              <Select
+              name="user-type"
+              value={inputValue.userType}
+              onValueChange={value => setInputValue({ type: 'user-type', value })}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select an option" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">Request truck services</SelectItem>
+                  <SelectItem value="driver">Offer truck services</SelectItem>
+                </SelectContent>
+              </Select>
+              {state?.errors?.userType && (
+                <p className="text-sm text-destructive font-medium">
+                  {state?.errors.userType}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender</Label>
+              <Select
+              name="gender"
+              value={inputValue.gender}
+              onValueChange={value => setInputValue({ type: 'gender', value })}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select an option" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              {state?.errors?.gender && (
+                <p className="text-sm text-destructive font-medium">{state?.errors.gender}</p>
+              )}
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="gender">Gender</Label>
-            <Select
-            name="gender"
-            value={inputValue.gender}
-            onValueChange={value => setInputValue({ type: 'gender', value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select an option" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="male">Male</SelectItem>
-                <SelectItem value="female">Female</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-            {state?.errors?.gender && (
-              <p className="text-sm text-destructive font-medium">{state?.errors.gender}</p>
-            )}
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                  id="password"
+                  type="password"
+                  name="password"
+                  value={inputValue.password}
+                  onChange={e => setInputValue({ type: 'password', value: e.target.value })}
+              />
+              {state?.errors?.password && (
+                <p className="text-sm text-destructive font-medium">
+                  {state?.errors.password}
+                </p>
+              )}
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-                id="password"
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm password</Label>
+              <Input
+                id="confirm-password"
                 type="password"
-                name="password"
-                value={inputValue.password}
-                onChange={e => setInputValue({ type: 'password', value: e.target.value })}
-            />
-            {state?.errors?.password && (
-              <p className="text-sm text-destructive font-medium">
-                {state?.errors.password}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirm password</Label>
-            <Input
-              id="confirm-password"
-              type="password"
-              name="confirm-password"
-              value={inputValue.confirmPassword}
-              onChange={e => setInputValue({ type: 'confirm-password', value: e.target.value })}
-            />
-            {state?.errors?.confirmPassword && (
-              <p className="text-sm text-destructive font-medium">
-                {state?.errors.confirmPassword}
-              </p>
-            )}
-            {state?.errors?.message && (
-              <p className="text-sm text-destructive font-medium">{state?.errors.message}</p>
-            )}
+                name="confirm-password"
+                value={inputValue.confirmPassword}
+                onChange={e => setInputValue({ type: 'confirm-password', value: e.target.value })}
+              />
+              {state?.errors?.confirmPassword && (
+                <p className="text-sm text-destructive font-medium">
+                  {state?.errors.confirmPassword}
+                </p>
+              )}
+              {state?.errors?.message && (
+                <p className="text-sm text-destructive font-medium">{state?.errors.message}</p>
+              )}
+            </div>
           </div>
 
           {inputValue.userType !== 'driver' &&
             <p className="text-xs text-muted-foreground text-center">
               By signing up, you agree to our{' '}
-              <a 
-                href="/terms-of-service" 
-                target="_blank" 
+              <a
+                href="/terms-of-service"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline font-medium"
               >
                 Terms of Service
               </a>
               {' '}and{' '}
-              <a 
-                href="/privacy-policy" 
-                target="_blank" 
+              <a
+                href="/privacy-policy"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline font-medium"
               >
@@ -542,7 +553,7 @@ export default function ContinueRegistration({ email, phone, token }: {
             <Button onClick={() => setShowDriverVehicleScreen(true)} className="w-full">
               Next
             </Button>
-          ) : 
+          ) :
           (
             <Button type="submit" disabled={loading} className="w-full">
             {loading ? (
