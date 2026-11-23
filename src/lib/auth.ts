@@ -11,6 +11,8 @@ import { newVehicleSchema, NewVehicleSchema } from "@/lib/helpers/zod/vehicle";
 import { db } from "@/db";
 import schemas from '@/db/schemas';
 import { cookies } from "next/headers";
+import { redirect, RedirectType } from "next/navigation";
+import { compare } from "bcrypt";
 
 export async function verifyEmail(email: string) {
     const logger = loggerFor('Email verification service');
@@ -59,7 +61,7 @@ export async function verifyPhone(phone: string, email: string) {
     if(existingUser)
         return {
             success: true,
-            message: 'You will receive a verification code if no account was found associated with this number.'
+            message: 'You will receive a verification code if an account was found associated with this number.'
         }
     
     await sendSMSVerificationCode(phoneIntlFormat);
@@ -104,18 +106,17 @@ export async function registerNewUser(
     newDriverData: NewDriverData,
     newVehicleData: NewVehicleData
 ) {
-    let role = 'user';
     const cookieStore = await cookies();
     const validNewUser = validateObjectWithZod(newUserData, newUserSchema);
     if(!validNewUser.success)
         return {
-            success: false,
+            success: false as const,
             errors: validNewUser.error
         }
     
     if(validNewUser.success && validNewUser.data?.password !== validNewUser.data?.confirmPassword) {
         return {
-            success: false,
+            success: false as const,
             errors: {
                 message: 'passwords do not match!'
             }
@@ -140,7 +141,7 @@ export async function registerNewUser(
     
     if(existingUser)
         return {
-            success: false,
+            success: false as const,
             errors: {
                 message: 'An account already exists for this user. If you are looking to convert to a driver, sign in and find option on your profile.'
             }
@@ -156,14 +157,12 @@ export async function registerNewUser(
     let validNewVehicle: ValidationResult<NewVehicleSchema>;
 
     if(newSignupData.userType === 'driver') {
-        role = 'driver';
-                
         validNewVehicle = validateObjectWithZod(newVehicleData, newVehicleSchema);
         if(!validNewVehicle.success)
             return {
-                success: false,
+                success: false as const,
                 errors: {
-                    errorOn: 'driver-vehicle-screen',
+                    vehicleError: true,
                     ...validNewVehicle.error
                 }
             }
@@ -171,9 +170,9 @@ export async function registerNewUser(
         validNewDriver = validateObjectWithZod(newDriverData, newDriverSchema);
         if(!validNewDriver.success)
             return {
-                success: false,
+                success: false as const,
                 errors: {
-                    errorOn: 'driver-vehicle-screen',
+                    driverError: true,
                     ...validNewDriver.error
                 }
             }
@@ -203,11 +202,7 @@ export async function registerNewUser(
                 process.env.NEW_DRIVER_REG_SECRET!
             );
     
-            return {
-                success: true,
-                errors: undefined,
-                data: { role: 'driver', token }
-            }
+            redirect(`/signup/pending-approval?token=${token}`, RedirectType.replace);
         }
     
         const authToken = signToken(
@@ -218,26 +213,20 @@ export async function registerNewUser(
         const refreshToken = signToken(
             { userId: newUser.id },
             process.env.REFRESH_TOKEN_SECRET!,
-            '30d'
+            '7d'
         );
-    
-        cookieStore.set('auth-token', authToken, {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 60 * 15
-        });
+        
         cookieStore.set('refT', refreshToken, {
             httpOnly: true,
             sameSite: 'lax',
+            path: '/',
             secure: process.env.NODE_ENV === 'production',
-            maxAge: 60 * 60 * 24 * 30
+            maxAge: 60 * 60 * 24 * 7
         });
     
         return {
-            success: true,
-            errors: undefined,
-            data: { role: 'user', token: authToken }
+            success: true as const,
+            data: authToken
         }
     });
     return result;
@@ -247,7 +236,7 @@ export async function checkDriverApproved(token: string) {
     const validToken = verifyToken(token, process.env.NEW_DRIVER_REG_SECRET!);
         if(!validToken.success) 
             return {
-                success: false, 
+                success: false as const, 
                 message: 'The link you entered might be incorrect or broken'
             }
         
@@ -259,7 +248,7 @@ export async function checkDriverApproved(token: string) {
         
     if (!driverRecord) 
         return { 
-            success: false,
+            success: false as const,
             message: 'No record found for this entry. The link might be incorrect or broken'
         }
 
@@ -272,6 +261,71 @@ export async function checkDriverApproved(token: string) {
     return { 
         success: true,
         message: 'Approved'
+    }
+}
+
+export async function logUserIn(email: string, password: string) {
+    const cookieStore = await cookies();
+
+    const existingUser = await db.query.users.findFirst({
+        where: (user, { eq }) => eq(user.email, email)
+    }); 
+    if(!existingUser) 
+        return { 
+            success: false, 
+            message: 'Invalid email/password combination.' 
+        }
+
+    const validPassword = await compare(password, existingUser.password);
+    if(!validPassword) 
+        return { 
+            success: false, 
+            message: 'Invalid email/password combination.' 
+        }
+
+    if(existingUser.suspended)
+        return { 
+            success: false, 
+            message: 'Account suspended.' 
+        }
+
+    const authToken = signToken(
+        { userId: existingUser.id },
+        process.env.ACCESS_TOKEN_SECRET!,
+        '15m'
+    );
+    const refreshToken = signToken(
+        { userId: existingUser.id },
+        process.env.REFRESH_TOKEN_SECRET!,
+        '7d'
+    );
+    
+    cookieStore.set('refT', refreshToken, {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 * 7
+    });
+
+    if(existingUser.role === 'driver') {
+        const driver = await db.query.drivers.findFirst({
+            where: (driver, { eq }) => eq(driver.userId, existingUser.id)
+        });
+
+        if(!driver?.approved) {
+            const token = signToken(
+                { driverId: driver?.id },
+                process.env.NEW_DRIVER_REG_SECRET!
+            );
+                
+            redirect(`/signup/pending-approval?token=${token}`, RedirectType.replace);
+        }
+    }
+
+    return {
+        success: true,
+        data: authToken
     }
 }
 

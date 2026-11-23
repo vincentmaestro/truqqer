@@ -5,6 +5,7 @@ import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/app/components/ui/card';
+import AuthInfo from './auth-info';
 
 export default function Email({ info }: { info?: string }) {
   const [submitEmailResult, submitEmail] = useActionState(handleVerifyEmail, {
@@ -37,11 +38,7 @@ export default function Email({ info }: { info?: string }) {
 
       <CardContent>
         <form onSubmit={handleEmail} className="space-y-4">
-          {info && (
-            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-              <p className="text-sm text-destructive">{info}</p>
-            </div>
-          )}
+          { info && <AuthInfo info={info} /> }
 
           <div className="space-y-2">
             <Label htmlFor="email">Email address</Label>

@@ -32,10 +32,10 @@ export default function ContinueRegistration({ email, phone, token }: {
       driverLicensePhoto: '', insuranceDocument: '', vehicleRegistration: ''
     };
     const [inputValue, setInputValue] = useReducer(reducer, initialInputValues);
-    const [showDriverVehicleScreen, setShowDriverVehicleScreen] = useState(false);
+    const [driverVehicleError, setDriverVehicleError] = useState(false);
     const [state, submit] = useActionState(signup, {
       success: false,
-      errors: undefined,
+      errors: {},
     });
     const [loading, startTransition] = useTransition();
     const router = useRouter();
@@ -76,7 +76,7 @@ export default function ContinueRegistration({ email, phone, token }: {
       form.set('password', inputValue.password.trim());
       form.set('confirm-password', inputValue.confirmPassword.trim());
 
-      if(showDriverVehicleScreen) {
+      if(driverVehicleError) {
         form.set('vehicle-make', inputValue.vehicleMake.trim());
         form.set('vehicle-model', inputValue.vehicleModel.trim());
         form.set('vehicle-year', inputValue.vehicleYear.trim());
@@ -104,23 +104,23 @@ export default function ContinueRegistration({ email, phone, token }: {
     }
 
     useEffect(() => {
-      if(state.errors?.errorOn === 'driver-vehicle-screen') {
-        setShowDriverVehicleScreen(true);
+      if(!state.success && (state.errors.driverError || state.errors.vehicleError)) {
+        setDriverVehicleError(true);
         document.getElementById('field-error')?.scrollIntoView();
       }
       else
-        setShowDriverVehicleScreen(false);
-    }, [state.errors]);
+        setDriverVehicleError(false);
+    }, [state, router]);
 
     useEffect(() => {
-      const token = state.data?.token;
+      if(state.success) {
+        const token = state.data;
 
-      state.data?.role === 'driver'
-      ? router.replace(`/signup/pending-approval?token=${token}`)
-      : state.data?.role === 'user'
-      ? router.replace(`/explore`)
-      : null;
-    }, [state.success, router]);
+        //ZUSTAND WILL STORE THIS TOKEN
+
+        router.replace(`/explore`);
+      }
+    }, [state, router]);
 
     const truckTypes = [
     'boxed',
@@ -134,13 +134,13 @@ export default function ContinueRegistration({ email, phone, token }: {
     'tanker',
     ] as const;
 
-    if(showDriverVehicleScreen)
+    if(driverVehicleError)
       return (
       <Card className="w-full max-w-4xl">
         <CardHeader>
           <button
             type="button"
-            onClick={() => setShowDriverVehicleScreen(false)}
+            onClick={() => setDriverVehicleError(false)}
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -166,8 +166,8 @@ export default function ContinueRegistration({ email, phone, token }: {
                     value={inputValue.vehicleMake}
                     onChange={e => setInputValue({ type: 'vehicle-make', value: e.target.value })}
                   />
-                  {state.errors?.make && (
-                    <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.make}</p>
+                  {!state.success && !state.success && state.errors?.make && (
+                    <p id='field-error' className="text-sm text-destructive font-medium">{!state.success && !state.success && state.errors.make}</p>
                   )}
                 </div>
 
@@ -179,8 +179,8 @@ export default function ContinueRegistration({ email, phone, token }: {
                     value={inputValue.vehicleModel}
                     onChange={e => setInputValue({ type: 'vehicle-model', value: e.target.value })}
                   />
-                  {state.errors?.model && (
-                    <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.model}</p>
+                  {!state.success && !state.success && state.errors?.model && (
+                    <p id='field-error' className="text-sm text-destructive font-medium">{!state.success && !state.success && state.errors.model}</p>
                   )}
                 </div>
               </div>
@@ -197,8 +197,8 @@ export default function ContinueRegistration({ email, phone, token }: {
                     value={inputValue.vehicleYear}
                     onChange={e => setInputValue({ type: 'vehicle-year', value: e.target.value })}
                   />
-                  {state.errors?.year && (
-                    <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.year}</p>
+                  {!state.success && !state.success && state.errors?.year && (
+                    <p id='field-error' className="text-sm text-destructive font-medium">{!state.success && !state.success && state.errors.year}</p>
                   )}
                 </div>
 
@@ -210,8 +210,8 @@ export default function ContinueRegistration({ email, phone, token }: {
                     value={inputValue.vehicleColor}
                     onChange={e => setInputValue({ type: 'vehicle-color', value: e.target.value })}
                   />
-                  {state.errors?.color && (
-                    <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.color}</p>
+                  {!state.success && !state.success && state.errors?.color && (
+                    <p id='field-error' className="text-sm text-destructive font-medium">{!state.success && !state.success && state.errors.color}</p>
                   )}
                 </div>
               </div>
@@ -235,8 +235,8 @@ export default function ContinueRegistration({ email, phone, token }: {
                       ))}
                     </SelectContent>
                   </Select>
-                  {state.errors?.type && (
-                    <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.type}</p>
+                  {!state.success && !state.success && state.errors?.type && (
+                    <p id='field-error' className="text-sm text-destructive font-medium">{!state.success && !state.success && state.errors.type}</p>
                   )}
                 </div>
 
@@ -262,8 +262,8 @@ export default function ContinueRegistration({ email, phone, token }: {
                     value={inputValue.plateNumber}
                     onChange={e => setInputValue({ type: 'plate-number', value: e.target.value })}
                   />
-                  {state.errors?.plateNumber && (
-                    <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.plateNumber}</p>
+                  {!state.success && !state.success && state.errors?.plateNumber && (
+                    <p id='field-error' className="text-sm text-destructive font-medium">{!state.success && !state.success && state.errors.plateNumber}</p>
                   )}
                 </div>
 
@@ -275,8 +275,8 @@ export default function ContinueRegistration({ email, phone, token }: {
                     value={inputValue.vehicleCapacity}
                     onChange={e => setInputValue({ type: 'vehicle-capacity', value: e.target.value })}
                   />
-                  {state.errors?.capacity && (
-                    <p id='field-error' className="text-sm text-destructive font-medium">{state.errors.capacity}</p>
+                  {!state.success && !state.success && state.errors?.capacity && (
+                    <p id='field-error' className="text-sm text-destructive font-medium">{!state.success && !state.success && state.errors.capacity}</p>
                   )}
                 </div>
               </div>
@@ -294,9 +294,9 @@ export default function ContinueRegistration({ email, phone, token }: {
                   value={inputValue.driverLicenseNumber}
                   onChange={e => setInputValue({ type: 'driver-license-number', value: e.target.value })}
                 />
-                {state.errors?.licenseNumber && (
+                {!state.success && !state.success && state.errors?.licenseNumber && (
                   <p id='field-error' className="text-sm text-destructive font-medium">
-                    {state.errors.licenseNumber}
+                    {!state.success && !state.success && state.errors.licenseNumber}
                   </p>
                 )}
               </div>
@@ -354,9 +354,9 @@ export default function ContinueRegistration({ email, phone, token }: {
               </div>
             </div>
 
-            {state.errors?.message && (
+            {!state.success && !state.success && state.errors?.message && (
               <div id='field-error' className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                <p className="text-sm text-destructive font-medium">{state.errors.message}</p>
+                <p className="text-sm text-destructive font-medium">{!state.success && !state.success && state.errors.message}</p>
               </div>
             )}
 
@@ -407,7 +407,7 @@ export default function ContinueRegistration({ email, phone, token }: {
         <CardFooter className="flex justify-center">
           <button
             type="button"
-            onClick={() => setShowDriverVehicleScreen(false)}
+            onClick={() => setDriverVehicleError(false)}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Back one step
@@ -438,8 +438,8 @@ export default function ContinueRegistration({ email, phone, token }: {
               value={inputValue.name}
               onChange={e => setInputValue({ type: 'name', value: e.target.value })}
             />
-            {state?.errors?.name && (
-              <p className="text-sm text-destructive font-medium">{state?.errors.name}</p>
+            {!state.success && state.errors?.name && (
+              <p className="text-sm text-destructive font-medium">{!state.success && state.errors.name}</p>
             )}
           </div>
 
@@ -459,9 +459,9 @@ export default function ContinueRegistration({ email, phone, token }: {
                   <SelectItem value="driver">Offer truck services</SelectItem>
                 </SelectContent>
               </Select>
-              {state?.errors?.userType && (
+              {!state.success && state.errors?.userType && (
                 <p className="text-sm text-destructive font-medium">
-                  {state?.errors.userType}
+                  {!state.success && state.errors.userType}
                 </p>
               )}
             </div>
@@ -482,8 +482,8 @@ export default function ContinueRegistration({ email, phone, token }: {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
-              {state?.errors?.gender && (
-                <p className="text-sm text-destructive font-medium">{state?.errors.gender}</p>
+              {!state.success && state.errors?.gender && (
+                <p className="text-sm text-destructive font-medium">{!state.success && state.errors.gender}</p>
               )}
             </div>
           </div>
@@ -498,9 +498,9 @@ export default function ContinueRegistration({ email, phone, token }: {
                   value={inputValue.password}
                   onChange={e => setInputValue({ type: 'password', value: e.target.value })}
               />
-              {state?.errors?.password && (
+              {!state.success && state.errors?.password && (
                 <p className="text-sm text-destructive font-medium">
-                  {state?.errors.password}
+                  {!state.success && state.errors.password}
                 </p>
               )}
             </div>
@@ -514,13 +514,13 @@ export default function ContinueRegistration({ email, phone, token }: {
                 value={inputValue.confirmPassword}
                 onChange={e => setInputValue({ type: 'confirm-password', value: e.target.value })}
               />
-              {state?.errors?.confirmPassword && (
+              {!state.success && state.errors?.confirmPassword && (
                 <p className="text-sm text-destructive font-medium">
-                  {state?.errors.confirmPassword}
+                  {!state.success && state.errors.confirmPassword}
                 </p>
               )}
-              {state?.errors?.message && (
-                <p className="text-sm text-destructive font-medium">{state?.errors.message}</p>
+              {!state.success && state.errors?.message && (
+                <p className="text-sm text-destructive font-medium">{!state.success && state.errors.message}</p>
               )}
             </div>
           </div>
@@ -550,7 +550,7 @@ export default function ContinueRegistration({ email, phone, token }: {
           }
 
           {inputValue.userType === 'driver' ? (
-            <Button onClick={() => setShowDriverVehicleScreen(true)} className="w-full">
+            <Button onClick={() => setDriverVehicleError(true)} className="w-full">
               Next
             </Button>
           ) :

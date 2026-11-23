@@ -9,7 +9,7 @@ export default function Nav() {
             </Link>
 
             <div className="flex gap-x-10 items-center">
-                <Link href='/' className="text-lg">
+                <Link href='/login' className="text-lg">
                     <h1>Login</h1>
                 </Link>
                 <Link href='/signup' className="text-lg">

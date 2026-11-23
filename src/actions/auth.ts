@@ -1,22 +1,17 @@
 'use server';
+
 import { validateEmail, validateObjectWithZod } from "@/lib/helpers/zod/functions";
 import { captcha } from "@/lib/utils/captcha";
 import { captureException } from '@sentry/nextjs';
 import loggerFor from "@/lib/utils/logger";
-import { ActionResult, AuthResponse } from "@/types";
-import { sendEmailVerificationLink, sendExistingUserSignupNotification } from "@/lib/services/mail/verify-email";
-import { sendSMSVerificationCode } from "@/lib/services/sms/verify-phone";
-import { capitalizeInitialLetters, hashPassword, signToken, verifyToken } from "@/lib/helpers";
-import { db } from "@/db";
-import schemas from '@/db/schemas';
+import { ActionResult, NewLoginResponse, NewUserResponse } from "@/types";
+import { verifyToken } from "@/lib/helpers";
 import { emailThrottle } from "@/lib/redis/throttle/email";
 import { smsOtpThrottle, confirmOtpThrottle } from "@/lib/redis/throttle/sms";
 import { ipThrottle } from "@/lib/redis/throttle/ip-address";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { checkDriverApproved, confirmPhone, registerNewUser, verifyEmail, verifyPhone } from "@/lib/auth";
-import { email } from "zod";
-import { compare } from "bcrypt";
+import { checkDriverApproved, confirmPhone, logUserIn, registerNewUser, verifyEmail, verifyPhone } from "@/lib/auth";
+import { isRedirectError, RedirectType } from "next/dist/client/components/redirect-error";
 
 export async function handleVerifyEmail(_: ActionResult<null>, formData: FormData) {
     const captchaToken = String(formData.get('captcha-token'));
@@ -136,7 +131,7 @@ export async function handleConfirmationCode(_: ActionResult<null>, formData: Fo
     }
 
     if(continueRegistration) 
-        redirect('/signup/continue-registration');
+        redirect('/signup/continue-registration', RedirectType.replace);
 
     return {
         success: true,
@@ -144,7 +139,7 @@ export async function handleConfirmationCode(_: ActionResult<null>, formData: Fo
     }
 }
 
-export async function signup(_: AuthResponse, formData: FormData) {
+export async function signup(_: NewUserResponse, formData: FormData) {
     const newUserData = {
         name: String(formData.get('full-name')),
         userType: String(formData.get('user-type')),
@@ -176,7 +171,7 @@ export async function signup(_: AuthResponse, formData: FormData) {
     try {
         const captchaError = await captcha(captchaToken);
         if(captchaError) return {
-            success: false,
+            success: false as const,
             errors: {
                 message: captchaError.message
             }
@@ -184,7 +179,7 @@ export async function signup(_: AuthResponse, formData: FormData) {
 
         const ipThrottleError = await ipThrottle();
         if(ipThrottleError) return {
-            success: false,
+            success: false as const,
             errors: {
                 message: ipThrottleError.message
             }
@@ -203,6 +198,10 @@ export async function signup(_: AuthResponse, formData: FormData) {
         return response;
     }
     catch(err) {
+        if(isRedirectError(err)) {
+            throw err;
+        }
+
         logger.error('Error encountered during account creation', err);
         captureException(err, {
             tags: {
@@ -213,12 +212,10 @@ export async function signup(_: AuthResponse, formData: FormData) {
         });
 
         return {
-            success: false,
+            success: false as const,
             errors: {
-                errorOn: 'driver-vehicle-screen',
                 message: err instanceof Error ? err.message : String(err)
-            },
-            data: undefined
+            }
         }
     }
 }
@@ -239,15 +236,11 @@ export async function checkDriverApprovalStatus(token: string) {
     }
 }
 
-export async function login(_: ActionResult<null>, formData: FormData) {
+export async function login(_: NewLoginResponse, formData: FormData) {
     const email = String(formData.get('email'));
     const password = String(formData.get('passord'));
     const captchaToken = String(formData.get('captcha-token'));
     const logger = loggerFor('User login');
-    const cookieStore = await cookies();
-    let token = '';
-    let driverApproved = true;
-    let loginSuccessful = false;
 
     try {
         const captchaError =  await captcha(captchaToken);
@@ -265,79 +258,20 @@ export async function login(_: ActionResult<null>, formData: FormData) {
                 success: false, 
                 message: 'Invalid email address.' 
             }
-        
-        const existingUser = await db.query.users.findFirst({
-            where: (user, { eq }) => eq(user.email, validEmail.data)
-        }); 
-        if(!existingUser) 
-            return { 
-                success: false, 
-                message: 'Invalid email/password combination.' 
-            }
 
-        const validPassword = await compare(password, existingUser.password);
-        if(!validPassword) 
-            return { 
-                success: false, 
-                message: 'Invalid email/password combination.' 
-            }
-
-        if(existingUser.suspended)
-            return { 
-                success: false, 
-                message: 'Account suspended.' 
-            }
-
-        const authToken = signToken(
-            { userId: existingUser.id },
-            process.env.ACCESS_TOKEN_SECRET!,
-            '15m'
-        );
-        const refreshToken = signToken(
-            { userId: existingUser.id },
-            process.env.REFRESH_TOKEN_SECRET!,
-            '30d'
-        );
-    
-        cookieStore.set('auth-token', authToken, {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 60 * 15
-        });
-        cookieStore.set('refT', refreshToken, {
-            httpOnly: true,
-            sameSite: 'lax',
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 60 * 60 * 24 * 30
-        });
-
-        if(existingUser.role === 'driver') {
-            const driver = await db.query.drivers.findFirst({
-                where: (driver, { eq }) => eq(driver.userId, existingUser.id)
-            });
-
-            if(!driver?.approved) {
-                token = signToken(
-                    { driverId: driver?.id },
-                    process.env.NEW_DRIVER_REG_SECRET!
-                );
-                driverApproved = false;
-            }
-        }
+        const response = await logUserIn(validEmail.data, password);
+        return response;
     }
     catch(err) {
+        if(isRedirectError(err)) {
+            throw err;
+        }
+
+        logger.error('Error encountered during account login', err);
+
         return { 
             success: false,
             message: err instanceof Error ? err.message : String(err)
         }
-    }
-
-    if(!driverApproved) {  
-        redirect(`/signup/pending-approval?token=${token}`);
-    }
-
-    if(loginSuccessful) {
-        redirect('/explore');
     }
 }

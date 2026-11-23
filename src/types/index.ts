@@ -32,15 +32,22 @@ export type NewVehicleData = {
     registrationDocument: string;
 }
 
-export type AuthResponse = {
-    success: boolean;
-    errors?: {
+export type NewUserResponse = {
+    success: false;
+    errors: {
         [k: string]: string
     }
-    data?: {
-        role: string;
-        token: string;
-    }
+} | {
+    success: true;
+    data: string;
+}
+
+export type NewLoginResponse = {
+    success: boolean;
+    message: string;
+} | {
+    success: boolean;
+    data: string;
 }
 
 export interface Location {
